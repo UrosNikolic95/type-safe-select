@@ -2,7 +2,7 @@
   "name": "type-safe-select",
   "version": "1.0.4",
   "description": "",
-  "main": "lib/main.js",
+  "main": "main.js",
   "files": [
     "lib/**/*"
   ],
@@ -27,5 +27,8 @@
   "dependencies": {
     "ts-node": "^10.4.0",
     "typeorm": "^0.2.41"
+  },
+  "directories": {
+    "lib": "lib"
   }
 }
