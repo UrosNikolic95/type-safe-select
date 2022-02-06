@@ -1,8 +1,33 @@
 # Usage
 
+Properly define entities:
+
+Example:
+
+    export class Entity1{
+        @PrimaryGeneratedColumn()
+        id: number
+
+        // column
+        @Column()
+        field1: number
+
+        // association
+        @ManyToOne(() => Entity2, (el)=>el.return_field_1)
+        field2: Entity2
+
+        // association
+        @OneToMany(() => Entity3, (el)=>el.return_field_2)
+        field2: Entity3
+
+        // association
+        @OneToOne(() => Entity4, (el)=>el.return_field_3)
+        field3: Entity4
+    }
+
 For TypeORM repo:
 
-    const repo:Repository<Entity>
+    repo:Repository<Entity>
 
     const result = await TypeSafeSelect(repo, {
         name1: (el) => el.name,
@@ -20,11 +45,13 @@ Result will have type:
         id: typeof el.test1s.id
         }[]
 
+Example of getter:
+
+    (el)=> el.<association_1>.<association_2>.<column>
+
 Last field of getter is column, and not association.
 
 Getter fields that are not the last one are associations, and not getters.
-
-    (el)=> el.<association_1>.<association_2>.<column>
 
 # Why?
 
