@@ -2,7 +2,7 @@
   "name": "type-safe-select",
   "version": "1.0.10",
   "description": "",
-  "main": "lib/main.js",
+  "main": "lib/main",
   "type": "commonjs",
   "files": [
     "lib/**/*"
@@ -29,7 +29,7 @@
     "ts-node": "^10.4.0",
     "typeorm": "^0.2.41"
   },
-  "types": "lib/main.d.ts",
+  "types": "lib/main",
   "directories": {
     "lib": "lib"
   }
