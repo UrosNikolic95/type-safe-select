@@ -2,7 +2,7 @@
   "name": "type-safe-select",
   "version": "1.0.3",
   "description": "",
-  "main": "main.ts",
+  "main": "lib/main.js",
   "files": [
     "lib/**/*"
   ],
