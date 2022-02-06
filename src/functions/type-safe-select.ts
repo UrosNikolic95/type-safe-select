@@ -28,7 +28,6 @@ export async function TypeSafeSelect<entity, result>(
     const last = path.pop();
     joinsHelper.add(path);
     const alias = joinsHelper.getAlias(path);
-    if (!alias) console.log("!!!", path, last, path.join() == "");
     stringSelect.push(alias + "." + last + " as " + key);
   });
 
