@@ -11,3 +11,21 @@ export type Select<entity, result> = {
 };
 
 export type PathGetter<T> = (el: T) => void;
+
+export type ConditionNode<T> = {
+  and?: ConditionNode<T>[];
+  or?: ConditionNode<T>[];
+  condition?: ConditionValue<T>;
+};
+
+export type OperatorData<T> = { value: T; stringMaker: StringMaker };
+export type StringMaker = (
+  alias: string,
+  field: string,
+  varName: string
+) => string;
+
+export type ConditionValue<T> = {
+  pathGetter: PathGetter<Flatten<T>>;
+  operation: OperatorData<unknown>;
+};

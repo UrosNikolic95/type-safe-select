@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { Repository, SelectQueryBuilder } from "typeorm";
 import { Alias, MappedAliases, StrToStr } from "./interfaces";
 import { PathGetter, Select } from "./types";
 
@@ -26,7 +26,7 @@ export async function TypeSafeSelect<entity, result>(
   Object.keys(select).forEach((key) => {
     const path = getPath(select[key]);
     const last = path.pop();
-    joinsHelper.add(path);
+    joinsHelper.addAllPaths(path);
     const alias = joinsHelper.getAlias(path);
     stringSelect.push(alias + "." + last + " as " + key);
   });
@@ -55,16 +55,19 @@ export class JoinsHelper {
     return "alias_" + this.current++;
   }
 
-  add(arr: string[]): void {
+  addPath(path: string): void {
+    if (!this.obj[path]) {
+      this.obj[path] = this.createAlias();
+    }
+  }
+
+  addAllPaths(arr: string[]): void {
     arr.forEach((el, index) => {
       const keyA = arr.slice(0, index).join() || rootStr;
-      if (!this.obj[keyA]) {
-        this.obj[keyA] = this.createAlias();
-      }
+      this.addPath(keyA);
+
       const keyB = arr.slice(0, index + 1).join();
-      if (!this.obj[keyB]) {
-        this.obj[keyB] = this.createAlias();
-      }
+      this.addPath(keyB);
 
       this.joins[this.obj[keyB]] = {
         association: this.obj[keyA] + "." + el,
@@ -83,5 +86,17 @@ export class JoinsHelper {
 
   get allJoins(): Alias[] {
     return Object.values(this.joins);
+  }
+
+  addLeftJoin<T>(query: SelectQueryBuilder<T>): void {
+    this.allJoins.forEach((el) => {
+      query.leftJoin(el.association, el.alias);
+    });
+  }
+
+  addLeftJoinAndSelect<T>(query: SelectQueryBuilder<T>): void {
+    this.allJoins.forEach((el) => {
+      query.leftJoinAndSelect(el.association, el.alias);
+    });
   }
 }

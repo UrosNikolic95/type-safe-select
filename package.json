@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx ts-node src/main.ts"
+    "start": "npx ts-node src/main.ts",
+    "publish": "npm version patch && npm publish"
   },
   "repository": {
     "type": "git",
