@@ -8,9 +8,9 @@
     "lib/**/*"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx ts-node src/main.ts",
-    "publish": "npm version patch && npm publish"
+    "publish": "npm version patch && npm publish",
+    "test": "jest --config jest.config.json"
   },
   "repository": {
     "type": "git",
@@ -24,9 +24,14 @@
   },
   "homepage": "https://github.com/UrosNikolic95/type-safe-select#readme",
   "devDependencies": {
+    "@types/jest": "^27.4.0",
+    "jest": "^27.5.1",
+    "pg": "^8.7.3",
+    "ts-jest": "^27.1.3",
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "reflect-metadata": "^0.1.13",
     "ts-node": "^10.4.0",
     "typeorm": "^0.2.41"
   },
