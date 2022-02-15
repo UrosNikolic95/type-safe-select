@@ -60,9 +60,6 @@ export class QueryHelperData {
 }
 
 export class QueryHelper<entity> {
-  variableHelper = new VariableHelper();
-  joinsHelper = new JoinsHelper();
-
   constructor(private readonly repo: Repository<entity>) {}
 
   private getSelectStrings<entity, result>(
@@ -85,32 +82,33 @@ export class QueryHelper<entity> {
     where?: ConditionNode<entity>
   ): Promise<result[]> {
     const data = new QueryHelperData();
-    const query = this.repo.createQueryBuilder(this.joinsHelper.rootAlias);
+    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
     if (where) {
       query.where(
         this.SerializeWhere(where, data),
-        this.variableHelper.variables
+        data.variableHelper.variables
       );
     }
 
     const stringSelect = this.getSelectStrings(select, data);
     query.select(stringSelect);
 
-    this.joinsHelper.addLeftJoin(query);
+    data.joinsHelper.addLeftJoin(query);
 
+    console.log(">>>>", query.getQuery());
     return query.getRawMany<result>();
   }
 
   SelectAll(where?: ConditionNode<entity>): Promise<entity[]> {
     const data = new QueryHelperData();
-    const query = this.repo.createQueryBuilder(this.joinsHelper.rootAlias);
+    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
     if (where) {
       query.where(
         this.SerializeWhere(where, data),
-        this.variableHelper.variables
+        data.variableHelper.variables
       );
     }
-    this.joinsHelper.addLeftJoinAndSelect(query);
+    data.joinsHelper.addLeftJoinAndSelect(query);
     return query.getMany();
   }
 
