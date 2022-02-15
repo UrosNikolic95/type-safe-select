@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "start": "npx ts-node src/main.ts",
-    "patch-publish": "npm version patch && npm publish",
+    "pp": "npm version patch && npm publish",
     "test": "jest --config jest.config.json"
   },
   "repository": {
