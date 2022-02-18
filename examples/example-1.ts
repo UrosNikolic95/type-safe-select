@@ -41,7 +41,7 @@ async function FirstExample() {
         },
         {
           condition: {
-            pathGetter: (el) => el.test2.test1,
+            pathGetter: (el) => el.test2.test1.field2,
             operation: {
               value: 1,
               stringMaker: (alias, field, varName) =>
