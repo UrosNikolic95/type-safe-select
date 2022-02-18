@@ -6,8 +6,8 @@ For TypeORM repo:
 
     const result = await TypeSafeSelect(repo, {
         name1: (el) => el.name,
-        name2: (el) => el.test1.name, // requires associacion test1s
-        name3: (el) => el.test1.test2.name, // requires associations  test1s and test2
+        name2: (el) => el.test1.name, // requires associacion test1
+        name3: (el) => el.test1.test2.name, // requires associations  test1 and test2
         id: (el) => el.test1.id, // requires associacion test1s
     }),
 
@@ -71,3 +71,65 @@ Example:
     const path = getPath<Entity1>((el) => el.field1.field2.field3)
 
     // path:  ["field1", "field2", "field3"]
+
+# Example 1
+
+    const repo = getRepository(Test1Entity);
+
+    const queryHelper = new QueryHelper(repo);
+
+    const found = await queryHelper.SelectSpecific(
+        {
+            field1: (el) => el.test2.test1.id,
+            field2: (el) => el.test2.id,
+            field3: (el) => el.id,
+        },
+        {
+            and: [
+                {
+                or: [
+                    {
+                    condition: {
+                        pathGetter: (el) => el.field1,
+                        operation: {
+                            value: 1,
+                            stringMaker: (alias, field, varName) => `${alias}.${field} < ${varName}`,
+                            },
+                    },
+                    },
+                    {
+                    condition: {
+                        pathGetter: (el) => el.field1,
+                        operation: {
+                            value: 0,
+                            stringMaker: (alias, field, varName) => `${alias}.${field} > ${varName}`,
+                        },
+                    },
+                    },
+                ],
+                },
+                {
+                condition: {
+                    pathGetter: (el) => el.test2.test1,
+                    operation: {
+                        value: 1,
+                        stringMaker: (alias, field, varName) => `${alias}.${field} = ${varName}`,
+                    },
+                },
+                },
+            ],
+            }
+        );
+    }
+
+# Example 2.
+
+    import { Equals, OperatorData } from "type-safe-select";
+
+    const operatorData1 = Equals(1);
+
+    // It returns same as the following:
+    const operatorData2: OperatorData<number> = {
+        value: 1,
+        stringMaker: (alias, field, varName) => `${alias}.${field} = ${varName}`,
+    };
