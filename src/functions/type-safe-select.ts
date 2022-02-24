@@ -55,19 +55,21 @@ export class JoinsHelper {
     return "alias_" + this.current++;
   }
 
-  addPath(path: string): void {
-    if (!this.obj[path]) {
-      this.obj[path] = this.createAlias();
+  addPath(path: string[]): string {
+    const key = path.join() || rootStr;
+    if (!this.obj[key]) {
+      this.obj[key] = this.createAlias();
     }
+    return key;
   }
 
   addAllPaths(arr: string[]): void {
     arr.forEach((el, index) => {
-      const keyA = arr.slice(0, index).join() || rootStr;
-      this.addPath(keyA);
+      const pathA = arr.slice(0, index);
+      const keyA = this.addPath(pathA);
 
-      const keyB = arr.slice(0, index + 1).join();
-      this.addPath(keyB);
+      const pathB = arr.slice(0, index + 1);
+      const keyB = this.addPath(pathB);
 
       this.joins[this.obj[keyB]] = {
         association: this.obj[keyA] + "." + el,
