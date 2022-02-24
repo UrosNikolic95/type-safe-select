@@ -138,10 +138,6 @@ export function GetSearch<entity>(
       const alias = queryHelper.joinsHelper.getAlias(path);
       const varName = queryHelper.variableHelper.addVariable(object[property]);
       return `${alias}.${last} IN (:...${varName})`;
-    } else {
-      const root = queryHelper.joinsHelper.rootAlias;
-      const varName = queryHelper.variableHelper.addVariable(object[property]);
-      return `${root}.${property} IN (:...${varName})`;
     }
   });
   const condition = "(" + conditionsStrings.join(" AND ") + ")";
