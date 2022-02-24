@@ -123,18 +123,22 @@ export function GetSearch<T>(
 ): void {
   const target = object.constructor.prototype;
   const conditionsStrings = Object.keys(object).map((property) => {
-    const meta = Reflect.getMetadata(
+    const pathGetter = Reflect.getMetadata(
       searchStr,
       target,
       property
     ) as PathGetter<T>;
-    if (meta) {
-      const path = getPath(meta);
+    if (pathGetter) {
+      const path = getPath(pathGetter);
       const last = path.pop();
       queryHelper.joinsHelper.addAllPaths(path);
       const alias = queryHelper.joinsHelper.getAlias(path);
       const varName = queryHelper.variableHelper.addVariable(object[property]);
       return `${alias}.${last} IN (:...${varName})`;
+    } else {
+      const root = queryHelper.joinsHelper.rootAlias;
+      const varName = queryHelper.variableHelper.addVariable(object[property]);
+      return `${root}.${property} IN (:...${varName})`;
     }
   });
   const condition = "(" + conditionsStrings.join(" AND ") + ")";
