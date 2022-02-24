@@ -95,7 +95,6 @@ export class QueryHelper<entity> {
 
     data.joinsHelper.addLeftJoin(query);
 
-    console.log(">>>>", query.getQuery());
     return query.getRawMany<result>();
   }
 

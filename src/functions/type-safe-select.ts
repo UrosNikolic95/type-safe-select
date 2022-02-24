@@ -1,5 +1,6 @@
 import { Repository, SelectQueryBuilder } from "typeorm";
 import { Alias, MappedAliases, StrToStr } from "./interfaces";
+import { QueryHelperData } from "./query-helper";
 import { PathGetter, Select } from "./types";
 
 export function getPath<T>(pathFunc: PathGetter<T>): string[] {
@@ -55,31 +56,35 @@ export class JoinsHelper {
     return "alias_" + this.current++;
   }
 
-  addPath(path: string[]): string {
-    const key = path.join() || rootStr;
-    if (!this.obj[key]) {
-      this.obj[key] = this.createAlias();
+  addPath(path: string): void {
+    if (!this.obj[path]) {
+      this.obj[path] = this.createAlias();
     }
-    return key;
   }
 
   addAllPaths(arr: string[]): void {
     arr.forEach((el, index) => {
       const pathA = arr.slice(0, index);
-      const keyA = this.addPath(pathA);
+      const pathStrA = this.getPathString(pathA);
+      this.addPath(pathStrA);
 
       const pathB = arr.slice(0, index + 1);
-      const keyB = this.addPath(pathB);
+      const pathStrB = this.getPathString(pathB);
+      this.addPath(pathStrB);
 
-      this.joins[this.obj[keyB]] = {
-        association: this.obj[keyA] + "." + el,
-        alias: this.obj[keyB],
+      this.joins[this.obj[pathStrB]] = {
+        association: this.obj[pathStrA] + "." + el,
+        alias: this.obj[pathStrB],
       };
     });
   }
 
+  getPathString(path: string[]): string {
+    return path.join() || rootStr;
+  }
+
   getAlias(path: string[]): string {
-    return this.obj[path.join() || rootStr];
+    return this.obj[this.getPathString(path)];
   }
 
   get rootAlias(): string {
@@ -101,4 +106,32 @@ export class JoinsHelper {
       query.leftJoinAndSelect(el.association, el.alias);
     });
   }
+}
+
+export const searchStr = "search";
+
+export function SetSearch<T>(pathGetter: PathGetter<T>): PropertyDecorator {
+  return (target, property) => {
+    Reflect.defineMetadata(searchStr, pathGetter, target, property);
+  };
+}
+
+export function GetSearch<T>(
+  object: Object,
+  queryHelper: QueryHelperData
+): void {
+  const target = object.constructor.prototype;
+  Object.keys(object).forEach((property) => {
+    const meta = Reflect.getMetadata(
+      searchStr,
+      target,
+      property
+    ) as PathGetter<T>;
+    if (meta) {
+      const path = getPath(meta);
+      const last = path.pop();
+      queryHelper.joinsHelper.addAllPaths(path);
+      queryHelper.joinsHelper.getAlias(path);
+    }
+  });
 }
