@@ -117,11 +117,12 @@ export function SetSearch<T>(pathGetter: PathGetter<T>): PropertyDecorator {
 }
 
 export function GetSearch<T>(
-  object: Object,
-  queryHelper: QueryHelperData
+  object: T,
+  queryHelper: QueryHelperData,
+  query: SelectQueryBuilder<T>
 ): void {
   const target = object.constructor.prototype;
-  Object.keys(object).forEach((property) => {
+  const conditionsStrings = Object.keys(object).map((property) => {
     const meta = Reflect.getMetadata(
       searchStr,
       target,
@@ -131,7 +132,11 @@ export function GetSearch<T>(
       const path = getPath(meta);
       const last = path.pop();
       queryHelper.joinsHelper.addAllPaths(path);
-      queryHelper.joinsHelper.getAlias(path);
+      const alias = queryHelper.joinsHelper.getAlias(path);
+      const varName = queryHelper.variableHelper.addVariable(object[property]);
+      return `${alias}.${last} IN (:...${varName})`;
     }
   });
+  const condition = "(" + conditionsStrings.join(" AND ") + ")";
+  query.andWhere(condition, queryHelper.variableHelper.variables);
 }
