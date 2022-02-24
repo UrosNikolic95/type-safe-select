@@ -116,18 +116,21 @@ export function SetSearch<T>(pathGetter: PathGetter<T>): PropertyDecorator {
   };
 }
 
-export function GetSearch<T>(
-  object: T,
+type Type = Function;
+
+export function GetSearch<entity>(
+  object: Object,
+  dtoType: Type,
   queryHelper: QueryHelperData,
-  query: SelectQueryBuilder<T>
+  query: SelectQueryBuilder<entity>
 ): void {
-  const target = object.constructor.prototype;
+  const target = dtoType.prototype;
   const conditionsStrings = Object.keys(object).map((property) => {
     const pathGetter = Reflect.getMetadata(
       searchStr,
       target,
       property
-    ) as PathGetter<T>;
+    ) as PathGetter<entity>;
     if (pathGetter) {
       const path = getPath(pathGetter);
       const last = path.pop();
