@@ -84,10 +84,8 @@ export class QueryHelper<entity> {
     const data = new QueryHelperData();
     const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
     if (where) {
-      query.where(
-        this.SerializeWhere(where, data),
-        data.variableHelper.variables
-      );
+      const whereStr = this.SerializeWhere(where, data);
+      if (whereStr) query.where(whereStr, data.variableHelper.variables);
     }
 
     const stringSelect = this.getSelectStrings(select, data);
@@ -102,10 +100,8 @@ export class QueryHelper<entity> {
     const data = new QueryHelperData();
     const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
     if (where) {
-      query.where(
-        this.SerializeWhere(where, data),
-        data.variableHelper.variables
-      );
+      const whereStr = this.SerializeWhere(where, data);
+      if (whereStr) query.where(whereStr, data.variableHelper.variables);
     }
     data.joinsHelper.addLeftJoinAndSelect(query);
     return query.getMany();
@@ -136,7 +132,7 @@ export class QueryHelper<entity> {
   ) {
     if (this.visited.has(conditionNode)) {
       console.log("Already visited.");
-      return;
+      return null;
     }
     this.visited.add(conditionNode);
 
@@ -159,6 +155,9 @@ export class QueryHelper<entity> {
     const { pathGetter, operation } = condition;
     const path = getPath(pathGetter);
     const field = path.pop();
+    if (!field) {
+      throw new Error("Getter has to have at least one field.");
+    }
 
     data.joinsHelper.addAllPaths(path);
     const alias = data.joinsHelper.getAlias(path);
