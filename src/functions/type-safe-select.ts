@@ -56,27 +56,40 @@ export class JoinsHelper {
     return "alias_" + this.current++;
   }
 
-  addPath(path: string): void {
-    if (!this.obj[path]) {
-      this.obj[path] = this.createAlias();
+  addPath(path: string[]): string {
+    const key = this.getPathString(path);
+    if (!this.obj[key]) {
+      this.obj[key] = this.createAlias();
     }
+    return this.obj[key];
   }
 
-  addAllPaths(arr: string[]): void {
-    arr.forEach((el, index) => {
-      const pathA = arr.slice(0, index);
-      const pathStrA = this.getPathString(pathA);
-      this.addPath(pathStrA);
+  addAllPaths(path: string[]): void {
+    path.forEach((field, index) => {
+      const pathA = path.slice(0, index);
+      const keyA = this.addPath(pathA);
 
-      const pathB = arr.slice(0, index + 1);
-      const pathStrB = this.getPathString(pathB);
-      this.addPath(pathStrB);
+      const pathB = path.slice(0, index + 1);
+      const keyB = this.addPath(pathB);
 
-      this.joins[this.obj[pathStrB]] = {
-        association: this.obj[pathStrA] + "." + el,
-        alias: this.obj[pathStrB],
+      this.joins[keyB] = {
+        association: keyA + "." + field,
+        alias: keyB,
       };
     });
+  }
+
+  addSeparateLastField(path: string[]): void {
+    this.addAllPaths(path);
+
+    const last = path.pop();
+    const previousAlias = this.getAlias(path);
+    const currentAlias = this.addPath([...path, last + "_separated"]);
+
+    this.joins[currentAlias] = {
+      association: previousAlias + "." + last,
+      alias: currentAlias,
+    };
   }
 
   getPathString(path: string[]): string {
@@ -118,7 +131,7 @@ export function SetSearch<T>(pathGetter: PathGetter<T>): PropertyDecorator {
 
 type Type = Function;
 
-export function GetSearch<entity>(
+export function getSearch<entity>(
   object: Object,
   dtoType: Type,
   queryHelper: QueryHelperData,
