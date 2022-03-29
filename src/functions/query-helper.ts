@@ -1,6 +1,13 @@
 import { Repository } from "typeorm";
 import { getPath, JoinsHelper } from "./type-safe-select";
-import { ConditionNode, ConditionValue, OperatorData, Select } from "./types";
+import {
+  ConditionNode,
+  ConditionValue,
+  GroupBy,
+  GroupByAndSelect,
+  OperatorData,
+  Select,
+} from "./types";
 
 export function Equals<T>(value: T): OperatorData<T> {
   return {
@@ -77,14 +84,72 @@ export class QueryHelper<entity> {
     return stringSelect;
   }
 
-  SelectSpecific<result>(
+  private getGroupBy<entity, result>(
+    groupBy: GroupBy<entity, result>,
+    data: QueryHelperData
+  ): string[] {
+    const stringSelect: string[] = [];
+    Object.keys(groupBy).forEach((key) => {
+      const path = getPath(groupBy[key]);
+      const last = path.pop();
+      data.joinsHelper.addAllPaths(path);
+      const alias = data.joinsHelper.getAlias(path);
+      stringSelect.push(alias + "." + last);
+    });
+    return stringSelect;
+  }
+
+  separateGroupBy(groupByAndSelect: GroupByAndSelect): GroupBy {
+    const groupBy = {} as GroupBy;
+    Object.keys(groupByAndSelect).forEach((key) => {
+      groupBy[key] = groupByAndSelect[key].groupBy;
+    });
+    return groupBy;
+  }
+
+  separateSelect(groupByAndSelect: GroupByAndSelect): Select {
+    const select = {} as Select;
+    Object.keys(groupByAndSelect)
+      .filter((key) => groupByAndSelect[key].select)
+      .forEach((key) => {
+        select[key] = groupByAndSelect[key].groupBy;
+      });
+    return select;
+  }
+
+  selectGroupBy<result>(
+    groupByAndSelect: GroupByAndSelect<entity, result>,
+    where?: ConditionNode<entity>
+  ): Promise<result[]> {
+    const data = new QueryHelperData();
+    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
+
+    const groupBy = this.separateGroupBy(groupByAndSelect);
+    const select = this.separateSelect(groupByAndSelect);
+
+    if (where) {
+      const whereStr = this.serializeWhere(where, data);
+      if (whereStr) query.where(whereStr, data.variableHelper.variables);
+    }
+
+    const stringSelect = this.getSelectStrings(select, data);
+    query.select(stringSelect);
+    const stringGroupBy = this.getGroupBy(groupBy, data);
+    stringGroupBy.forEach((term) => query.addGroupBy(term));
+
+    data.joinsHelper.addLeftJoin(query);
+
+    return query.getRawMany<result>();
+  }
+
+  selectSpecific<result>(
     select: Select<entity, result>,
     where?: ConditionNode<entity>
   ): Promise<result[]> {
     const data = new QueryHelperData();
     const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
     if (where) {
-      const whereStr = this.SerializeWhere(where, data);
+      const whereStr = this.serializeWhere(where, data);
       if (whereStr) query.where(whereStr, data.variableHelper.variables);
     }
 
@@ -96,11 +161,11 @@ export class QueryHelper<entity> {
     return query.getRawMany<result>();
   }
 
-  SelectAll(where?: ConditionNode<entity>): Promise<entity[]> {
+  selectAll(where?: ConditionNode<entity>): Promise<entity[]> {
     const data = new QueryHelperData();
     const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
     if (where) {
-      const whereStr = this.SerializeWhere(where, data);
+      const whereStr = this.serializeWhere(where, data);
       if (whereStr) query.where(whereStr, data.variableHelper.variables);
     }
     data.joinsHelper.addLeftJoinAndSelect(query);
@@ -126,7 +191,7 @@ export class QueryHelper<entity> {
   }
 
   private visited: Set<Object> = new Set<Object>();
-  private SerializeWhere(
+  private serializeWhere(
     conditionNode: ConditionNode<entity>,
     data: QueryHelperData
   ) {
@@ -140,7 +205,7 @@ export class QueryHelper<entity> {
 
     const { condition, and, or } = conditionNode;
     if (condition) {
-      return this.SerializeSingleCondition(condition, data);
+      return this.serializeSingleCondition(condition, data);
     } else if (and) {
       return this.SerializeConditionsArray(and, " AND ", data);
     } else if (or) {
@@ -148,7 +213,7 @@ export class QueryHelper<entity> {
     }
   }
 
-  private SerializeSingleCondition(
+  private serializeSingleCondition(
     condition: ConditionValue<entity>,
     data: QueryHelperData
   ) {
@@ -177,7 +242,7 @@ export class QueryHelper<entity> {
     return (
       "(" +
       conditionNode
-        .map((conditionItem) => this.SerializeWhere(conditionItem, data))
+        .map((conditionItem) => this.serializeWhere(conditionItem, data))
         .join(conditionString) +
       ")"
     );

@@ -6,8 +6,19 @@ export type Flatten<T> = {
     : T[P];
 };
 
-export type Select<entity, result> = {
+export type Select<entity = any, result = any> = {
   [property in keyof result]: (el: Flatten<entity>) => result[property];
+};
+
+export type GroupBy<entity = any, result = any> = Select<entity, result>;
+
+export type GroupByAndSelectSigular<entity = any, returnValue = any> = {
+  groupBy: (el: Flatten<entity>) => returnValue;
+  select: boolean;
+};
+
+export type GroupByAndSelect<entity = any, result = any> = {
+  [property in keyof result]: GroupByAndSelectSigular<entity, result>;
 };
 
 export type PathGetter<T> = (el: T) => void;

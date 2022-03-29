@@ -9,7 +9,7 @@ test("Test 1", async () => {
   const repo = getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
 
-  const result = await queryHelper.SelectSpecific(
+  const result = await queryHelper.selectSpecific(
     {
       selected1: (el) => el.id,
       selected2: (el) => el.test2.id,

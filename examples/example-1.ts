@@ -7,7 +7,7 @@ async function FirstExample() {
 
   const queryHelper = new QueryHelper(repo);
 
-  const found = await queryHelper.SelectSpecific(
+  const found = await queryHelper.selectSpecific(
     {
       field1: (el) => el.test2.test1.id,
       field2: (el) => el.test2.id,
