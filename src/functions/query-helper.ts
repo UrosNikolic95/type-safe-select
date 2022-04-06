@@ -50,6 +50,10 @@ export class TypedEmptyObject<T> {
   [key: string]: T;
 }
 
+export interface Obj<T> {
+  [key: string]: T;
+}
+
 export class VariableHelper {
   public variables = new TypedEmptyObject<any>();
   private variable_counter = 0;
