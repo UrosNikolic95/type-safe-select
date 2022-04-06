@@ -1,6 +1,6 @@
 {
   "name": "type-safe-select",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "",
   "main": "lib/main",
   "type": "commonjs",
