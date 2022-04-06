@@ -21,6 +21,9 @@ export class QueryHelperV2<entity> {
   private variable_counter = 0;
   private stringSelect: string[] = [];
   private stringGroupBy: string[] = [];
+  private query: SelectQueryBuilder<entity>;
+  private groupBy = {} as GroupBy;
+  private select = {} as Select;
 
   constructor(private readonly repo: Repository<entity>) {}
 
@@ -118,14 +121,12 @@ export class QueryHelperV2<entity> {
     });
   }
 
-  private groupBy = {} as GroupBy;
   separateGroupBy(groupByAndSelect: GroupByAndSelect): void {
     Object.keys(groupByAndSelect).forEach((key) => {
       this.groupBy[key] = groupByAndSelect[key].groupBy;
     });
   }
 
-  private select = {} as Select;
   separateSelect(groupByAndSelect: GroupByAndSelect): void {
     Object.keys(groupByAndSelect)
       .filter((key) => groupByAndSelect[key].select)
@@ -134,28 +135,31 @@ export class QueryHelperV2<entity> {
       });
   }
 
+  addWhere(where: ConditionNode<entity>) {
+    if (where) {
+      const whereStr = this.serializeWhere(where);
+      this.query.where(whereStr, this.variables);
+    }
+  }
+
   selectGroupBy<result>(
     groupByAndSelect: GroupByAndSelect<entity, result>,
     where?: ConditionNode<entity>
   ): Promise<result[]> {
-    const query = this.repo.createQueryBuilder(this.rootAlias);
+    this.query = this.repo.createQueryBuilder(this.rootAlias);
 
     this.separateGroupBy(groupByAndSelect);
     this.separateSelect(groupByAndSelect);
-
-    if (where) {
-      const whereStr = this.serializeWhere(where);
-      if (whereStr) query.where(whereStr, this.variables);
-    }
+    this.addWhere(where);
 
     this.getSelectStrings();
-    query.select(this.stringSelect);
+    this.query.select(this.stringSelect);
     this.getGroupBy();
-    this.stringGroupBy.forEach((term) => query.addGroupBy(term));
+    this.stringGroupBy.forEach((term) => this.query.addGroupBy(term));
 
-    this.addLeftJoin(query);
+    this.addLeftJoin(this.query);
 
-    return query.getRawMany<result>();
+    return this.query.getRawMany<result>();
   }
 
   selectSpecific<result>(
