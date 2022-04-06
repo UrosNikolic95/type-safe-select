@@ -14,18 +14,23 @@ import { StrToStr, MappedAliases, Alias } from "./interfaces";
 const rootStr = "root";
 
 export class QueryHelperV2<entity> {
-  private current = 0;
+  private aliasCounter = 0;
   private obj = {} as StrToStr;
   private joins = {} as MappedAliases;
   private variables = {} as Obj<any>;
   private variable_counter = 0;
   private stringSelect: string[] = [];
   private stringGroupBy: string[] = [];
-  private query: SelectQueryBuilder<entity>;
   private groupBy = {} as GroupBy;
   private select = {} as Select;
 
-  constructor(private readonly repo: Repository<entity>) {}
+  constructor(private readonly repo: Repository<entity>) {
+    this.initRoot();
+  }
+
+  private initRoot() {
+    this.obj[rootStr] = this.createAlias();
+  }
 
   public addVariable(value: unknown): string {
     const variableName = "var_" + this.variable_counter++;
@@ -34,7 +39,7 @@ export class QueryHelperV2<entity> {
   }
 
   createAlias(): string {
-    return "alias_" + this.current++;
+    return "alias_" + this.aliasCounter++;
   }
 
   addPath(path: string[]): string {
@@ -135,10 +140,10 @@ export class QueryHelperV2<entity> {
       });
   }
 
-  addWhere(where: ConditionNode<entity>) {
+  getWhere(where: ConditionNode<entity>, query) {
     if (where) {
       const whereStr = this.serializeWhere(where);
-      this.query.where(whereStr, this.variables);
+      query.where(whereStr, this.variables);
     }
   }
 
@@ -146,20 +151,20 @@ export class QueryHelperV2<entity> {
     groupByAndSelect: GroupByAndSelect<entity, result>,
     where?: ConditionNode<entity>
   ): Promise<result[]> {
-    this.query = this.repo.createQueryBuilder(this.rootAlias);
+    const query = this.repo.createQueryBuilder(this.rootAlias);
 
     this.separateGroupBy(groupByAndSelect);
     this.separateSelect(groupByAndSelect);
-    this.addWhere(where);
+    this.getWhere(where, query);
 
     this.getSelectStrings();
-    this.query.select(this.stringSelect);
+    query.select(this.stringSelect);
     this.getGroupBy();
-    this.stringGroupBy.forEach((term) => this.query.addGroupBy(term));
+    this.stringGroupBy.forEach((term) => query.addGroupBy(term));
 
-    this.addLeftJoin(this.query);
+    this.addLeftJoin(query);
 
-    return this.query.getRawMany<result>();
+    return query.getRawMany<result>();
   }
 
   selectSpecific<result>(
@@ -169,10 +174,8 @@ export class QueryHelperV2<entity> {
     this.select = select;
 
     const query = this.repo.createQueryBuilder(this.rootAlias);
-    if (where) {
-      const whereStr = this.serializeWhere(where);
-      if (whereStr) query.where(whereStr, this.variables);
-    }
+
+    this.getWhere(where, query);
 
     this.getSelectStrings();
     query.select(this.stringSelect);
@@ -183,13 +186,10 @@ export class QueryHelperV2<entity> {
   }
 
   selectAll(where?: ConditionNode<entity>): Promise<entity[]> {
-    const data = new QueryHelperData();
-    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
-    if (where) {
-      const whereStr = this.serializeWhere(where);
-      if (whereStr) query.where(whereStr, data.variableHelper.variables);
-    }
-    data.joinsHelper.addLeftJoinAndSelect(query);
+    const query = this.repo.createQueryBuilder(this.rootAlias);
+
+    this.getWhere(where, query);
+    this.addLeftJoinAndSelect(query);
     return query.getMany();
   }
 

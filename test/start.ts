@@ -2,12 +2,12 @@ import "reflect-metadata";
 import { getRepository } from "typeorm";
 import { TestingHelper } from "../prepare-test";
 import { Test1Entity } from "../prepare-test/entities/test1.entitie";
-import { Equals, QueryHelper } from "../src/main";
+import { Equals, QueryHelper, QueryHelperV2 } from "../src/main";
 
 test("Test 1", async () => {
   const connection = await TestingHelper.getConnection();
   const repo = getRepository(Test1Entity);
-  const queryHelper = new QueryHelper(repo);
+  const queryHelper = new QueryHelperV2(repo);
 
   const result = await queryHelper.selectSpecific(
     {
