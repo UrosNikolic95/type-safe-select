@@ -1,10 +1,14 @@
-export type Flatten<T> = {
+export type Flatten<T> = F1<F2<T>>;
+
+export type F1<T> = {
   [P in keyof T]: T[P] extends Object
     ? T[P] extends Array<infer el>
-      ? Flatten<el>
-      : Flatten<T[P]>
+      ? F1<F2<el>>
+      : F1<T[P]>
     : T[P];
 };
+
+export type F2<T> = T extends Array<infer el> ? F2<el> : T;
 
 export type Select<entity = any, result = any> = {
   [property in keyof result]: (el: Flatten<entity>) => result[property];

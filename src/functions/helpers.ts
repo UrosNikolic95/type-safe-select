@@ -1,4 +1,4 @@
-import { PathGetter } from "./types";
+import { Flatten, PathGetter } from "./types";
 
 export function getPath<T>(pathFunc: PathGetter<T>): string[] {
   const pathArr: string[] = [];
@@ -21,15 +21,16 @@ export function getField<T>(fieldFunc: PathGetter<T>): string {
 
 export function getAllValuesFrom<T, R>(
   obj: T,
-  pathFunc: (el: T) => R,
-  depth = 1
+  pathFunc: (el: Flatten<T>) => R,
+  depth = 10
 ): R[] {
   const path = getPath(pathFunc);
-  return path.reduce(
-    (reduced, field) => {
-      const next = reduced[field];
-      return Array.isArray(next) ? next.flat(depth).filter((i) => i) : next;
-    },
-    [obj].flat(depth).filter((i) => i)
-  ) as R[];
+  return path.reduce((reduced: any | any[], field) => {
+    return Array.isArray(reduced)
+      ? reduced
+          .flat(depth)
+          .filter((i) => i)
+          .map((item) => item[field])
+      : reduced[field];
+  }, obj) as R[];
 }

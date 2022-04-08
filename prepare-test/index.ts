@@ -7,7 +7,6 @@ export class TestingHelper {
 
   public static async getConnection() {
     if (!TestingHelper.connection) {
-      console.log("getConnection");
       TestingHelper.connection = await createConnection({
         type: "postgres",
         host: "localhost",
@@ -28,27 +27,23 @@ export class TestingHelper {
 beforeAll(async () => {
   const test2 = await TestingHelper.getConnection();
 
-  console.log("t2_1");
   const t2_1 = await Test2Entity.create({
     id: 1,
     field1: "A",
   }).save();
 
-  console.log("t1_1");
   const t1_1 = await Test1Entity.create({
     id: 1,
     field1: "A",
     test2_id: t2_1.id,
   } as Test1Entity).save();
 
-  console.log("t1_2");
   const t1_2 = await Test1Entity.create({
     id: 2,
     field1: "B",
     test2_id: t2_1.id,
   } as Test1Entity).save();
 
-  console.log("t1_3");
   const t1_3 = await Test1Entity.create({
     id: 3,
     field1: "C",
