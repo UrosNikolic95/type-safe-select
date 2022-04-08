@@ -6,30 +6,25 @@ import {
   GroupBy,
   GroupByAndSelect,
   Obj,
-  QueryHelperData,
   Select,
 } from "../main";
-import { StrToStr, MappedAliases, Alias } from "./interfaces";
+import { Alias } from "./interfaces";
 
 const rootStr = "root";
 
 export class QueryHelperV2<entity> {
   private aliasCounter = 0;
-  private obj = {} as StrToStr;
-  private joins = {} as MappedAliases;
+  private aliasMapping = {} as Obj<string>;
+  private joins = {} as Obj<Alias>;
   private variables = {} as Obj<any>;
   private variable_counter = 0;
-  private stringSelect: string[] = [];
-  private stringGroupBy: string[] = [];
-  private groupBy = {} as GroupBy;
-  private select = {} as Select;
 
   constructor(private readonly repo: Repository<entity>) {
     this.initRoot();
   }
 
   private initRoot() {
-    this.obj[rootStr] = this.createAlias();
+    this.aliasMapping[rootStr] = this.createAlias();
   }
 
   public addVariable(value: unknown): string {
@@ -42,12 +37,20 @@ export class QueryHelperV2<entity> {
     return "alias_" + this.aliasCounter++;
   }
 
+  addSeparatePath(path: string[]): string {
+    const key = this.getSeparatePathString(path);
+    if (!this.aliasMapping[key]) {
+      this.aliasMapping[key] = this.createAlias();
+    }
+    return this.aliasMapping[key];
+  }
+
   addPath(path: string[]): string {
     const key = this.getPathString(path);
-    if (!this.obj[key]) {
-      this.obj[key] = this.createAlias();
+    if (!this.aliasMapping[key]) {
+      this.aliasMapping[key] = this.createAlias();
     }
-    return this.obj[key];
+    return this.aliasMapping[key];
   }
 
   addAllPaths(path: string[]): void {
@@ -65,82 +68,95 @@ export class QueryHelperV2<entity> {
     });
   }
 
-  addSeparateLastField(path: string[]): void {
+  addSeparateLastField(path: string[]): string {
     this.addAllPaths(path);
 
-    const last = path.pop();
-    const previousAlias = this.getAlias(path);
-    const currentAlias = this.addPath([...path, last + "_separated"]);
+    const last = path[path.length - 1];
+    const previousAlias = this.getAlias(path.slice(0, path.length - 1));
+    const currentAlias = this.addSeparatePath(path);
 
     this.joins[currentAlias] = {
       association: previousAlias + "." + last,
       alias: currentAlias,
     };
+    return currentAlias;
   }
 
   getPathString(path: string[]): string {
-    return path.join() || rootStr;
+    return [rootStr, ...path].join();
+  }
+
+  getSeparatePathString(path: string[]): string {
+    return [rootStr, ...path].join() + "_separated";
   }
 
   getAlias(path: string[]): string {
-    return this.obj[this.getPathString(path)];
+    return this.aliasMapping[this.getPathString(path)];
   }
 
   get rootAlias(): string {
-    return this.obj[rootStr];
+    return this.aliasMapping[rootStr];
   }
 
   get allJoins(): Alias[] {
     return Object.values(this.joins);
   }
 
-  addLeftJoin<T>(query: SelectQueryBuilder<T>): void {
+  addLeftJoin(query: SelectQueryBuilder<entity>): void {
     this.allJoins.forEach((el) => {
       query.leftJoin(el.association, el.alias);
     });
   }
 
-  addLeftJoinAndSelect<T>(query: SelectQueryBuilder<T>): void {
+  addLeftJoinAndSelect(query: SelectQueryBuilder<entity>): void {
     this.allJoins.forEach((el) => {
       query.leftJoinAndSelect(el.association, el.alias);
     });
   }
 
-  private getSelectStrings(): void {
-    Object.keys(this.select).forEach((key) => {
-      const path = getPath(this.select[key]);
+  private getSelectStrings(select: Select): string[] {
+    const stringSelect: string[] = [];
+    Object.keys(select).forEach((key) => {
+      const path = getPath(select[key]);
       const last = path.pop();
       this.addAllPaths(path);
       const alias = this.getAlias(path);
-      this.stringSelect.push(alias + "." + last + " as " + key);
+      stringSelect.push(alias + "." + last + " as " + key);
     });
+    return stringSelect;
   }
 
-  private getGroupBy(): void {
-    Object.keys(this.groupBy).forEach((key) => {
-      const path = getPath(this.groupBy[key]);
+  private getGroupBy(groupBy: GroupBy): string[] {
+    const stringGroupBy: string[] = [];
+    Object.keys(groupBy).forEach((key) => {
+      const path = getPath(groupBy[key]);
       const last = path.pop();
       this.addAllPaths(path);
       const alias = this.getAlias(path);
-      this.stringGroupBy.push(alias + "." + last);
+      stringGroupBy.push(alias + "." + last);
     });
+    return stringGroupBy;
   }
 
-  separateGroupBy(groupByAndSelect: GroupByAndSelect): void {
-    Object.keys(groupByAndSelect).forEach((key) => {
-      this.groupBy[key] = groupByAndSelect[key].groupBy;
+  separateGroupBy(groupByAndSelect: GroupByAndSelect): GroupBy {
+    const groupBy = {} as GroupBy;
+    Object.keys(groupByAndSelect).map((key) => {
+      groupBy[key] = groupByAndSelect[key].groupBy;
     });
+    return groupBy;
   }
 
-  separateSelect(groupByAndSelect: GroupByAndSelect): void {
+  separateSelect(groupByAndSelect: GroupByAndSelect): Select {
+    const select = {} as Select;
     Object.keys(groupByAndSelect)
       .filter((key) => groupByAndSelect[key].select)
       .forEach((key) => {
-        this.select[key] = groupByAndSelect[key].groupBy;
+        select[key] = groupByAndSelect[key].groupBy;
       });
+    return select;
   }
 
-  getWhere(where: ConditionNode<entity>, query) {
+  getWhere(where: ConditionNode<entity>, query: SelectQueryBuilder<entity>) {
     if (where) {
       const whereStr = this.serializeWhere(where);
       query.where(whereStr, this.variables);
@@ -153,14 +169,14 @@ export class QueryHelperV2<entity> {
   ): Promise<result[]> {
     const query = this.repo.createQueryBuilder(this.rootAlias);
 
-    this.separateGroupBy(groupByAndSelect);
-    this.separateSelect(groupByAndSelect);
+    const groupBy = this.separateGroupBy(groupByAndSelect);
+    const select = this.separateSelect(groupByAndSelect);
     this.getWhere(where, query);
 
-    this.getSelectStrings();
-    query.select(this.stringSelect);
-    this.getGroupBy();
-    this.stringGroupBy.forEach((term) => query.addGroupBy(term));
+    const stringSelect = this.getSelectStrings(select);
+    query.select(stringSelect);
+    const stringGroupBy = this.getGroupBy(groupBy);
+    stringGroupBy.forEach((term) => query.addGroupBy(term));
 
     this.addLeftJoin(query);
 
@@ -171,14 +187,12 @@ export class QueryHelperV2<entity> {
     select: Select<entity, result>,
     where?: ConditionNode<entity>
   ): Promise<result[]> {
-    this.select = select;
-
     const query = this.repo.createQueryBuilder(this.rootAlias);
 
     this.getWhere(where, query);
 
-    this.getSelectStrings();
-    query.select(this.stringSelect);
+    const stringSelect = this.getSelectStrings(select);
+    query.select(stringSelect);
 
     this.addLeftJoin(query);
 
