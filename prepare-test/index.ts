@@ -54,4 +54,4 @@ beforeAll(async () => {
     field1: "C",
     test2_id: t2_1.id,
   } as Test1Entity).save();
-}, 5000);
+});
