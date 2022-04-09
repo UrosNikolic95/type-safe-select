@@ -64,3 +64,19 @@ test("Helpers Test 4", async () => {
 
   expect(arr.length).toBe(length * length * length);
 });
+
+test("Helpers Test 5", async () => {
+  const obj = {
+    A: {
+      B: {
+        C: {
+          D: 1,
+        },
+      },
+    },
+  };
+
+  const arr = getAllValuesFrom(obj, (el) => el.A.B.C.D);
+
+  expect(arr.length).toBe(1);
+});
