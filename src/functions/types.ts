@@ -1,11 +1,7 @@
 export type Flatten<T> = F1<F2<T>>;
 
 export type F1<T> = {
-  [P in keyof T]: T[P] extends Object
-    ? T[P] extends Array<infer el>
-      ? F1<F2<el>>
-      : F1<T[P]>
-    : T[P];
+  [P in keyof T]: T[P] extends Object ? Flatten<T[P]> : T[P];
 };
 
 export type F2<T> = T extends Array<infer el> ? F2<el> : T;
