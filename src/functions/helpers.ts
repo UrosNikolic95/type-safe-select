@@ -25,13 +25,15 @@ export function getAllValuesFrom<T, R>(
   depth = 10
 ): R[] {
   const path = getPath(pathFunc);
-  return path.reduce(
-    (reduced, field) => {
-      return reduced
-        .flat(depth)
-        .filter((i) => i)
-        .map((item) => item[field]);
-    },
-    [obj]
-  ) as unknown as R[];
+  return path
+    .reduce(
+      (reduced, field) => {
+        return reduced
+          .flat(depth)
+          .filter((i) => i)
+          .map((item) => item[field]);
+      },
+      [obj]
+    )
+    .flat(depth) as unknown as R[];
 }
