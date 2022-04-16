@@ -40,3 +40,15 @@ export type ConditionValue<T> = {
   pathGetter: PathGetter<Flatten<T>>;
   operation: OperatorData<unknown>;
 };
+
+export type OnlyPropertiesWithType<ObjectType, PropertyType> = {
+  [key in keyof ObjectType as ObjectType[key] extends PropertyType
+    ? key
+    : never]: ObjectType[key];
+};
+
+export type ExeptPropertiesWithType<ObjectType, PropertyType> = {
+  [key in keyof ObjectType as ObjectType[key] extends PropertyType
+    ? never
+    : key]: ObjectType[key];
+};
