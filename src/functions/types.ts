@@ -52,3 +52,13 @@ export type ExeptPropertiesWithType<ObjectType, PropertyType> = {
     ? never
     : key]: ObjectType[key];
 };
+
+export type SelectSpecific<entity, result> = {
+  select: Select<entity, result>;
+  where?: ConditionNode<entity>;
+};
+
+export type SelectGroupBy<entity, result> = {
+  groupByAndSelect: GroupBy<entity, result>;
+  where?: ConditionNode<entity>;
+};

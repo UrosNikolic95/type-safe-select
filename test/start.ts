@@ -9,19 +9,19 @@ test("Test 1", async () => {
   const repo = getRepository(Test1Entity);
   const queryHelper = new QueryHelperV2(repo);
 
-  const result = await queryHelper.selectSpecific(
-    {
+  const result = await queryHelper.selectSpecific({
+    select: {
       selected1: (el) => el.id,
       selected2: (el) => el.test2.id,
       selected3: (el) => el.test2.test1.id,
     },
-    {
+    where: {
       condition: {
         pathGetter: (el) => el.test2.test1.id,
         operation: Equals(1),
       },
-    }
-  );
+    },
+  });
   result.forEach((res) => {
     expect(res.selected3).toBe(1);
   });

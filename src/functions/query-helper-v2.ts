@@ -4,15 +4,15 @@ import {
   ConditionValue,
   getPath,
   GroupBy,
-  GroupByAndSelect,
   Obj,
   Select,
 } from "../main";
 import { Alias } from "./interfaces";
+import { SelectGroupBy, SelectSpecific } from "./types";
 
 const rootStr = "root";
 
-export class QueryHelperV2<entity> {
+class OneTimeQueryHelper<entity> {
   private aliasCounter = 0;
   private aliasMapping = {} as Obj<string>;
   private joins = {} as Obj<Alias>;
@@ -138,24 +138,6 @@ export class QueryHelperV2<entity> {
     return stringGroupBy;
   }
 
-  separateGroupBy(groupByAndSelect: GroupByAndSelect): GroupBy {
-    const groupBy = {} as GroupBy;
-    Object.keys(groupByAndSelect).map((key) => {
-      groupBy[key] = groupByAndSelect[key].groupBy;
-    });
-    return groupBy;
-  }
-
-  separateSelect(groupByAndSelect: GroupByAndSelect): Select {
-    const select = {} as Select;
-    Object.keys(groupByAndSelect)
-      .filter((key) => groupByAndSelect[key].select)
-      .forEach((key) => {
-        select[key] = groupByAndSelect[key].groupBy;
-      });
-    return select;
-  }
-
   getWhere(where: ConditionNode<entity>, query: SelectQueryBuilder<entity>) {
     if (where) {
       const whereStr = this.serializeWhere(where);
@@ -164,39 +146,37 @@ export class QueryHelperV2<entity> {
   }
 
   selectGroupBy<result>(
-    groupByAndSelect: GroupByAndSelect<entity, result>,
-    where?: ConditionNode<entity>
+    query: SelectGroupBy<entity, result>
   ): Promise<result[]> {
-    const query = this.repo.createQueryBuilder(this.rootAlias);
+    const { groupByAndSelect, where } = query;
+    const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
-    const groupBy = this.separateGroupBy(groupByAndSelect);
-    const select = this.separateSelect(groupByAndSelect);
-    this.getWhere(where, query);
+    this.getWhere(where, queryBuilder);
 
-    const stringSelect = this.getSelectStrings(select);
-    query.select(stringSelect);
-    const stringGroupBy = this.getGroupBy(groupBy);
-    stringGroupBy.forEach((term) => query.addGroupBy(term));
+    const stringSelect = this.getSelectStrings(groupByAndSelect);
+    queryBuilder.select(stringSelect);
+    const stringGroupBy = this.getGroupBy(groupByAndSelect);
+    stringGroupBy.forEach((term) => queryBuilder.addGroupBy(term));
 
-    this.addLeftJoin(query);
+    this.addLeftJoin(queryBuilder);
 
-    return query.getRawMany<result>();
+    return queryBuilder.getRawMany<result>();
   }
 
   selectSpecific<result>(
-    select: Select<entity, result>,
-    where?: ConditionNode<entity>
+    query: SelectSpecific<entity, result>
   ): Promise<result[]> {
-    const query = this.repo.createQueryBuilder(this.rootAlias);
+    const { where, select } = query;
+    const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
-    this.getWhere(where, query);
+    this.getWhere(where, queryBuilder);
 
     const stringSelect = this.getSelectStrings(select);
-    query.select(stringSelect);
+    queryBuilder.select(stringSelect);
 
-    this.addLeftJoin(query);
+    this.addLeftJoin(queryBuilder); //this should be second to last
 
-    return query.getRawMany<result>();
+    return queryBuilder.getRawMany<result>();
   }
 
   selectAll(where?: ConditionNode<entity>): Promise<entity[]> {
@@ -274,5 +254,19 @@ export class QueryHelperV2<entity> {
         .join(conditionString) +
       ")"
     );
+  }
+}
+
+export class QueryHelperV2<entity> {
+  constructor(private readonly repo: Repository<entity>) {}
+
+  selectSpecific<result>(query: SelectSpecific<entity, result>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectSpecific(query);
+  }
+
+  selectGroupBy<result>(query: SelectGroupBy<entity, result>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectGroupBy(query);
   }
 }
