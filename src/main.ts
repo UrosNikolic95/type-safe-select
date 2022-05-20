@@ -1,5 +1,5 @@
-export * from "./functions/type-safe-select";
 export * from "./functions/interfaces";
 export * from "./functions/types";
+export * from "./functions/operators";
 export * from "./functions/query-helper";
-export * from "./functions/query-helper-v2";
+export * from "./functions/operators";

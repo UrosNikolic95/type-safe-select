@@ -10,3 +10,7 @@ export interface Alias {
   association: string;
   alias: string;
 }
+
+export interface Obj<T> {
+  [key: string]: T;
+}

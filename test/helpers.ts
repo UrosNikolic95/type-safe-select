@@ -1,5 +1,4 @@
 import { getAllValuesFrom } from "../src/functions/helpers";
-import { F2, Flatten } from "../src/functions/types";
 
 test("Helpers Test 1", async () => {
   const length = 3;

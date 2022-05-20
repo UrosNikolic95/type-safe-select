@@ -2,12 +2,15 @@ import "reflect-metadata";
 import { getRepository } from "typeorm";
 import { TestingHelper } from "../prepare-test";
 import { Test1Entity } from "../prepare-test/entities/test1.entitie";
-import { Equals, QueryHelper, QueryHelperV2 } from "../src/main";
+import { Equals, QueryHelper } from "../src/main";
+
+beforeAll(async () => {
+  await TestingHelper.getConnection();
+});
 
 test("Test 1", async () => {
-  const connection = await TestingHelper.getConnection();
   const repo = getRepository(Test1Entity);
-  const queryHelper = new QueryHelperV2(repo);
+  const queryHelper = new QueryHelper(repo);
 
   const result = await queryHelper.selectSpecific({
     select: {
@@ -25,5 +28,29 @@ test("Test 1", async () => {
   result.forEach((res) => {
     expect(res.selected3).toBe(1);
   });
+});
+
+test("Test 2", async () => {
+  const repo = getRepository(Test1Entity);
+  const queryHelper = new QueryHelper(repo);
+
+  const result = await queryHelper.selectGroupBy({
+    groupByAndSelect: {
+      selected1: (el) => el.field1,
+      selected2: (el) => el.field2,
+    },
+    where: {
+      condition: {
+        pathGetter: (el) => el.field1,
+        operation: Equals("D"),
+      },
+    },
+  });
+  console.log(result);
+  expect(result.length).toBe(2);
+});
+
+afterAll(async () => {
+  const connection = await TestingHelper.getConnection();
   await connection.close();
 });

@@ -1,178 +1,183 @@
-import { Repository } from "typeorm";
-import { getPath, JoinsHelper } from "./type-safe-select";
-import {
-  ConditionNode,
-  ConditionValue,
-  GroupBy,
-  GroupByAndSelect,
-  OperatorData,
-  Select,
-} from "./types";
+import { Repository, SelectQueryBuilder } from "typeorm";
+import { ConditionNode, ConditionValue, GroupBy, Obj, Select } from "../main";
+import { getPath } from "./helpers";
+import { Alias } from "./interfaces";
+import { SelectGroupBy, SelectSpecific } from "./types";
 
-export function Equals<T>(value: T): OperatorData<T> {
-  return {
-    value,
-    stringMaker: (alias, field, varName) => `${alias}.${field} = :${varName}`,
-  };
-}
+const rootStr = "root";
 
-export function Like<T>(value: T): OperatorData<T> {
-  return {
-    value,
-    stringMaker: (alias, field, varName) =>
-      `${alias}.${field} LIKE (:${varName})`,
-  };
-}
-
-export function ILike<T>(value: T): OperatorData<T> {
-  return {
-    value,
-    stringMaker: (alias, field, varName) =>
-      `${alias}.${field} ILIKE (:${varName})`,
-  };
-}
-
-export function LessThan<T>(value: T): OperatorData<T> {
-  return {
-    value,
-    stringMaker: (alias, field, varName) => `${alias}.${field} < :${varName}`,
-  };
-}
-
-export function MoreThan<T>(value: T): OperatorData<T> {
-  return {
-    value,
-    stringMaker: (alias, field, varName) => `${alias}.${field} > :${varName}`,
-  };
-}
-
-export class TypedEmptyObject<T> {
-  [key: string]: T;
-}
-
-export interface Obj<T> {
-  [key: string]: T;
-}
-
-export class VariableHelper {
-  public variables = new TypedEmptyObject<any>();
+class OneTimeQueryHelper<entity> {
+  private aliasCounter = 0;
+  private aliasMapping = {} as Obj<string>;
+  private joins = {} as Obj<Alias>;
+  private variables = {} as Obj<any>;
   private variable_counter = 0;
+
+  constructor(private readonly repo: Repository<entity>) {
+    this.initRoot();
+  }
+
+  private initRoot() {
+    this.aliasMapping[rootStr] = this.createAlias();
+  }
 
   public addVariable(value: unknown): string {
     const variableName = "var_" + this.variable_counter++;
     this.variables[variableName] = value;
     return variableName;
   }
-}
 
-export class QueryHelperData {
-  public variableHelper = new VariableHelper();
-  public joinsHelper = new JoinsHelper();
-}
+  createAlias(): string {
+    return "alias_" + this.aliasCounter++;
+  }
 
-export class QueryHelper<entity> {
-  constructor(private readonly repo: Repository<entity>) {}
+  addSeparatePath(path: string[]): string {
+    const key = this.getSeparatePathString(path);
+    if (!this.aliasMapping[key]) {
+      this.aliasMapping[key] = this.createAlias();
+    }
+    return this.aliasMapping[key];
+  }
 
-  private getSelectStrings<entity, result>(
-    select: Select<entity, result>,
-    data: QueryHelperData
-  ): string[] {
+  addPath(path: string[]): string {
+    const key = this.getPathString(path);
+    if (!this.aliasMapping[key]) {
+      this.aliasMapping[key] = this.createAlias();
+    }
+    return this.aliasMapping[key];
+  }
+
+  addAllPaths(path: string[]): void {
+    path.forEach((field, index) => {
+      const pathA = path.slice(0, index);
+      const keyA = this.addPath(pathA);
+
+      const pathB = path.slice(0, index + 1);
+      const keyB = this.addPath(pathB);
+
+      this.joins[keyB] = {
+        association: keyA + "." + field,
+        alias: keyB,
+      };
+    });
+  }
+
+  addSeparateLastField(path: string[]): string {
+    this.addAllPaths(path);
+
+    const last = path[path.length - 1];
+    const previousAlias = this.getAlias(path.slice(0, path.length - 1));
+    const currentAlias = this.addSeparatePath(path);
+
+    this.joins[currentAlias] = {
+      association: previousAlias + "." + last,
+      alias: currentAlias,
+    };
+    return currentAlias;
+  }
+
+  getPathString(path: string[]): string {
+    return [rootStr, ...path].join();
+  }
+
+  getSeparatePathString(path: string[]): string {
+    return [rootStr, ...path].join() + "_separated";
+  }
+
+  getAlias(path: string[]): string {
+    return this.aliasMapping[this.getPathString(path)];
+  }
+
+  get rootAlias(): string {
+    return this.aliasMapping[rootStr];
+  }
+
+  get allJoins(): Alias[] {
+    return Object.values(this.joins);
+  }
+
+  addLeftJoin(query: SelectQueryBuilder<entity>): void {
+    this.allJoins.forEach((el) => {
+      query.leftJoin(el.association, el.alias);
+    });
+  }
+
+  addLeftJoinAndSelect(query: SelectQueryBuilder<entity>): void {
+    this.allJoins.forEach((el) => {
+      query.leftJoinAndSelect(el.association, el.alias);
+    });
+  }
+
+  private getSelectStrings(select: Select): string[] {
     const stringSelect: string[] = [];
     Object.keys(select).forEach((key) => {
       const path = getPath(select[key]);
       const last = path.pop();
-      data.joinsHelper.addAllPaths(path);
-      const alias = data.joinsHelper.getAlias(path);
+      this.addAllPaths(path);
+      const alias = this.getAlias(path);
       stringSelect.push(alias + "." + last + " as " + key);
     });
     return stringSelect;
   }
 
-  private getGroupBy<entity, result>(
-    groupBy: GroupBy<entity, result>,
-    data: QueryHelperData
-  ): string[] {
-    const stringSelect: string[] = [];
+  private getGroupBy(groupBy: GroupBy): string[] {
+    const stringGroupBy: string[] = [];
     Object.keys(groupBy).forEach((key) => {
       const path = getPath(groupBy[key]);
       const last = path.pop();
-      data.joinsHelper.addAllPaths(path);
-      const alias = data.joinsHelper.getAlias(path);
-      stringSelect.push(alias + "." + last);
+      this.addAllPaths(path);
+      const alias = this.getAlias(path);
+      stringGroupBy.push(alias + "." + last);
     });
-    return stringSelect;
+    return stringGroupBy;
   }
 
-  separateGroupBy(groupByAndSelect: GroupByAndSelect): GroupBy {
-    const groupBy = {} as GroupBy;
-    Object.keys(groupByAndSelect).forEach((key) => {
-      groupBy[key] = groupByAndSelect[key].groupBy;
-    });
-    return groupBy;
-  }
-
-  separateSelect(groupByAndSelect: GroupByAndSelect): Select {
-    const select = {} as Select;
-    Object.keys(groupByAndSelect)
-      .filter((key) => groupByAndSelect[key].select)
-      .forEach((key) => {
-        select[key] = groupByAndSelect[key].groupBy;
-      });
-    return select;
+  getWhere(where: ConditionNode<entity>, query: SelectQueryBuilder<entity>) {
+    if (where) {
+      const whereStr = this.serializeWhere(where);
+      query.where(whereStr, this.variables);
+    }
   }
 
   selectGroupBy<result>(
-    groupByAndSelect: GroupByAndSelect<entity, result>,
-    where?: ConditionNode<entity>
+    query: SelectGroupBy<entity, result>
   ): Promise<result[]> {
-    const data = new QueryHelperData();
-    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
+    const { groupByAndSelect, where } = query;
+    const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
-    const groupBy = this.separateGroupBy(groupByAndSelect);
-    const select = this.separateSelect(groupByAndSelect);
+    this.getWhere(where, queryBuilder);
 
-    if (where) {
-      const whereStr = this.serializeWhere(where, data);
-      if (whereStr) query.where(whereStr, data.variableHelper.variables);
-    }
+    const stringSelect = this.getSelectStrings(groupByAndSelect);
+    queryBuilder.select(stringSelect);
+    const stringGroupBy = this.getGroupBy(groupByAndSelect);
+    stringGroupBy.forEach((term) => queryBuilder.addGroupBy(term));
 
-    const stringSelect = this.getSelectStrings(select, data);
-    query.select(stringSelect);
-    const stringGroupBy = this.getGroupBy(groupBy, data);
-    stringGroupBy.forEach((term) => query.addGroupBy(term));
+    this.addLeftJoin(queryBuilder);
 
-    data.joinsHelper.addLeftJoin(query);
-
-    return query.getRawMany<result>();
+    return queryBuilder.getRawMany<result>();
   }
 
   selectSpecific<result>(
-    select: Select<entity, result>,
-    where?: ConditionNode<entity>
+    query: SelectSpecific<entity, result>
   ): Promise<result[]> {
-    const data = new QueryHelperData();
-    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
-    if (where) {
-      const whereStr = this.serializeWhere(where, data);
-      if (whereStr) query.where(whereStr, data.variableHelper.variables);
-    }
+    const { where, select } = query;
+    const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
-    const stringSelect = this.getSelectStrings(select, data);
-    query.select(stringSelect);
+    this.getWhere(where, queryBuilder);
 
-    data.joinsHelper.addLeftJoin(query);
+    const stringSelect = this.getSelectStrings(select);
+    queryBuilder.select(stringSelect);
 
-    return query.getRawMany<result>();
+    this.addLeftJoin(queryBuilder); //this should be second to last
+
+    return queryBuilder.getRawMany<result>();
   }
 
   selectAll(where?: ConditionNode<entity>): Promise<entity[]> {
-    const data = new QueryHelperData();
-    const query = this.repo.createQueryBuilder(data.joinsHelper.rootAlias);
-    if (where) {
-      const whereStr = this.serializeWhere(where, data);
-      if (whereStr) query.where(whereStr, data.variableHelper.variables);
-    }
-    data.joinsHelper.addLeftJoinAndSelect(query);
+    const query = this.repo.createQueryBuilder(this.rootAlias);
+
+    this.getWhere(where, query);
+    this.addLeftJoinAndSelect(query);
     return query.getMany();
   }
 
@@ -195,10 +200,7 @@ export class QueryHelper<entity> {
   }
 
   private visited: Set<Object> = new Set<Object>();
-  private serializeWhere(
-    conditionNode: ConditionNode<entity>,
-    data: QueryHelperData
-  ) {
+  private serializeWhere(conditionNode: ConditionNode<entity>) {
     if (this.visited.has(conditionNode)) {
       console.log("Already visited.");
       return null;
@@ -209,18 +211,15 @@ export class QueryHelper<entity> {
 
     const { condition, and, or } = conditionNode;
     if (condition) {
-      return this.serializeSingleCondition(condition, data);
+      return this.serializeSingleCondition(condition);
     } else if (and) {
-      return this.SerializeConditionsArray(and, " AND ", data);
+      return this.SerializeConditionsArray(and, " AND ");
     } else if (or) {
-      return this.SerializeConditionsArray(or, " OR ", data);
+      return this.SerializeConditionsArray(or, " OR ");
     }
   }
 
-  private serializeSingleCondition(
-    condition: ConditionValue<entity>,
-    data: QueryHelperData
-  ) {
+  private serializeSingleCondition(condition: ConditionValue<entity>) {
     const { pathGetter, operation } = condition;
     const path = getPath(pathGetter);
     const field = path.pop();
@@ -228,27 +227,40 @@ export class QueryHelper<entity> {
       throw new Error("Getter has to have at least one field.");
     }
 
-    data.joinsHelper.addAllPaths(path);
-    const alias = data.joinsHelper.getAlias(path);
+    this.addAllPaths(path);
+    const alias = this.getAlias(path);
 
     const { value, stringMaker } = operation;
 
-    const variableName = data.variableHelper.addVariable(value);
+    const variableName = this.addVariable(value);
 
     return stringMaker(alias, field, variableName);
   }
 
   private SerializeConditionsArray(
     conditionNode: ConditionNode<entity>[],
-    conditionString: string,
-    data: QueryHelperData
+    conditionString: string
   ): string {
     return (
       "(" +
       conditionNode
-        .map((conditionItem) => this.serializeWhere(conditionItem, data))
+        .map((conditionItem) => this.serializeWhere(conditionItem))
         .join(conditionString) +
       ")"
     );
+  }
+}
+
+export class QueryHelper<entity> {
+  constructor(private readonly repo: Repository<entity>) {}
+
+  selectSpecific<result>(query: SelectSpecific<entity, result>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectSpecific(query);
+  }
+
+  selectGroupBy<result>(query: SelectGroupBy<entity, result>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectGroupBy(query);
   }
 }
