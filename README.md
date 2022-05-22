@@ -2,14 +2,22 @@
 
 For TypeORM repo:
 
-    repo:Repository<Entity>
+    const repo = getRepository(Test1Entity);
+    const queryHelper = new QueryHelper(repo);
 
-    const result = await TypeSafeSelect(repo, {
-        name1: (el) => el.name,
-        name2: (el) => el.test1.name, // requires associacion test1
-        name3: (el) => el.test1.test2.name, // requires associations  test1 and test2
-        id: (el) => el.test1.id, // requires associacion test1s
-    }),
+    const result = await queryHelper.selectSpecific({
+        select: {
+            selected1: (el) => el.id,
+            selected2: (el) => el.test2.id,
+            selected3: (el) => el.test2.test1.id,
+        },
+        where: {
+            condition: {
+                pathGetter: (el) => el.test2.test1.id,
+                operation: Equals(1),
+            },
+        },
+    });
 
 Result will have type:
 
