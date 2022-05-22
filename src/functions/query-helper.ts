@@ -2,7 +2,7 @@ import { Repository, SelectQueryBuilder } from "typeorm";
 import { ConditionNode, ConditionValue, GroupBy, Obj, Select } from "../main";
 import { getPath } from "./helpers";
 import { Alias } from "./interfaces";
-import { SelectGroupBy, SelectSpecific } from "./types";
+import { GroupByQuery, GroupBySelect, SelectSpecific } from "./types";
 
 const rootStr = "root";
 
@@ -120,16 +120,32 @@ class OneTimeQueryHelper<entity> {
     return stringSelect;
   }
 
-  private getGroupBy(groupBy: GroupBy): string[] {
-    const stringGroupBy: string[] = [];
+  private getGroupBy(groupBy: GroupBySelect) {
+    const selectStringArr: string[] = [];
+    const groupByStringArr: string[] = [];
     Object.keys(groupBy).forEach((key) => {
       const path = getPath(groupBy[key]);
-      const last = path.pop();
-      this.addAllPaths(path);
-      const alias = this.getAlias(path);
-      stringGroupBy.push(alias + "." + last);
+      const first = path.shift();
+      if (first == "count") {
+        selectStringArr.push("COUNT(*)::int AS " + key);
+        return;
+      } else if ("groupBy") {
+        const last = path.pop();
+        this.addAllPaths(path);
+        const alias = this.getAlias(path);
+        const field = alias + "." + last;
+        selectStringArr.push(field + " AS " + key);
+        groupByStringArr.push(field);
+      } else if ("sum") {
+        const last = path.pop();
+        this.addAllPaths(path);
+        const alias = this.getAlias(path);
+        const field = alias + "." + last;
+        selectStringArr.push("SUM(" + field + ")::int AS " + key);
+      }
     });
-    return stringGroupBy;
+    const groupByStr = groupByStringArr.join(", ");
+    return { groupByStr, selectStringArr };
   }
 
   getWhere(where: ConditionNode<entity>, query: SelectQueryBuilder<entity>) {
@@ -140,17 +156,16 @@ class OneTimeQueryHelper<entity> {
   }
 
   selectGroupBy<result>(
-    query: SelectGroupBy<entity, result>
+    query: GroupByQuery<entity, result>
   ): Promise<result[]> {
-    const { groupByAndSelect, where } = query;
+    const { select: select, where } = query;
     const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
     this.getWhere(where, queryBuilder);
 
-    const stringSelect = this.getSelectStrings(groupByAndSelect);
-    queryBuilder.select(stringSelect);
-    const stringGroupBy = this.getGroupBy(groupByAndSelect);
-    stringGroupBy.forEach((term) => queryBuilder.addGroupBy(term));
+    const { groupByStr, selectStringArr } = this.getGroupBy(select);
+    queryBuilder.select(selectStringArr);
+    queryBuilder.groupBy(groupByStr);
 
     this.addLeftJoin(queryBuilder);
 
@@ -259,7 +274,7 @@ export class QueryHelper<entity> {
     return oneTime.selectSpecific(query);
   }
 
-  selectGroupBy<result>(query: SelectGroupBy<entity, result>) {
+  selectGroupBy<result>(query: GroupByQuery<entity, result>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
     return oneTime.selectGroupBy(query);
   }

@@ -58,7 +58,19 @@ export type SelectSpecific<entity, result> = {
   where?: ConditionNode<entity>;
 };
 
-export type SelectGroupBy<entity, result> = {
-  groupByAndSelect: GroupBy<entity, result>;
+export type GroupByOperation<entity> = {
+  groupBy: entity;
+  sum: entity;
+  count: number;
+};
+
+export type GroupBySelect<entity = any, result = any> = {
+  [property in keyof result]: (
+    el: GroupByOperation<entity>
+  ) => result[property];
+};
+
+export type GroupByQuery<entity = any, result = any> = {
+  select: GroupBySelect<entity, result>;
   where?: ConditionNode<entity>;
 };

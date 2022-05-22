@@ -35,9 +35,10 @@ test("Test 2", async () => {
   const queryHelper = new QueryHelper(repo);
 
   const result = await queryHelper.selectGroupBy({
-    groupByAndSelect: {
-      selected1: (el) => el.field1,
-      selected2: (el) => el.field2,
+    select: {
+      selected1: (el) => el.groupBy.field1,
+      selected2: (el) => el.groupBy.field2,
+      count1: (el) => el.count,
     },
     where: {
       condition: {
