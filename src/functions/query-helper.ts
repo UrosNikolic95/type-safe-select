@@ -129,14 +129,14 @@ class OneTimeQueryHelper<entity> {
       if (first == "count") {
         selectStringArr.push("COUNT(*)::int AS " + key);
         return;
-      } else if ("groupBy") {
+      } else if (first == "groupBy") {
         const last = path.pop();
         this.addAllPaths(path);
         const alias = this.getAlias(path);
         const field = alias + "." + last;
         selectStringArr.push(field + " AS " + key);
         groupByStringArr.push(field);
-      } else if ("sum") {
+      } else if (first == "sum") {
         const last = path.pop();
         this.addAllPaths(path);
         const alias = this.getAlias(path);
@@ -169,6 +169,7 @@ class OneTimeQueryHelper<entity> {
 
     this.addLeftJoin(queryBuilder);
 
+    console.log(queryBuilder.getQuery());
     return queryBuilder.getRawMany<result>();
   }
 

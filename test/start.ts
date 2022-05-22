@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { getRepository } from "typeorm";
 import { TestingHelper } from "../prepare-test";
 import { Test1Entity } from "../prepare-test/entities/test1.entitie";
+import { Test2Entity } from "../prepare-test/entities/test2.entitie";
 import { Equals, QueryHelper } from "../src/main";
 
 beforeAll(async () => {
@@ -25,6 +26,7 @@ test("Test 1", async () => {
       },
     },
   });
+
   result.forEach((res) => {
     expect(res.selected3).toBe(1);
   });
@@ -39,6 +41,7 @@ test("Test 2", async () => {
       selected1: (el) => el.groupBy.field1,
       selected2: (el) => el.groupBy.field2,
       count1: (el) => el.count,
+      sum1: (el) => el.sum.field2,
     },
     where: {
       condition: {
