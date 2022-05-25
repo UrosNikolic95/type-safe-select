@@ -141,3 +141,20 @@ Example:
         value: 1,
         stringMaker: (alias, field, varName) => `${alias}.${field} = ${varName}`,
     };
+
+# Example 3.
+
+    const result = await queryHelper.selectGroupBy({
+        select: {
+            selected1: (el) => el.groupBy.field1,
+            selected2: (el) => el.groupBy.field2,
+            count1: (el) => el.count,
+            sum1: (el) => el.sum.field2,
+        },
+        where: {
+            condition: {
+                pathGetter: (el) => el.field1,
+                operation: Equals("D"),
+            },
+        },
+    });
