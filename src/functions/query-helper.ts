@@ -2,7 +2,7 @@ import { Repository, SelectQueryBuilder } from "typeorm";
 import { ConditionNode, ConditionValue, GroupBy, Obj, Select } from "../main";
 import { getPath } from "./helpers";
 import { Alias } from "./interfaces";
-import { GroupByQuery, GroupBySelect, SelectSpecific } from "./types";
+import { GroupByQuery, GroupBySelect, OrderBy, SelectSpecific } from "./types";
 
 const rootStr = "root";
 
@@ -176,7 +176,7 @@ class OneTimeQueryHelper<entity> {
   selectSpecific<result>(
     query: SelectSpecific<entity, result>
   ): Promise<result[]> {
-    const { where, select } = query;
+    const { where, select, orderBy, skip, take } = query;
     const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
     this.getWhere(where, queryBuilder);
@@ -186,7 +186,38 @@ class OneTimeQueryHelper<entity> {
 
     this.addLeftJoin(queryBuilder); //this should be second to last
 
+    Object.keys(orderBy).forEach((key) =>
+      queryBuilder.addOrderBy(key, orderBy[key])
+    );
+
+    queryBuilder.skip(skip);
+    queryBuilder.take(take);
+
     return queryBuilder.getRawMany<result>();
+  }
+
+  selectSpecificTwoStage<result>(query: SelectSpecific<entity, result>) {
+    const { where, select } = query;
+    const queryBuilderA = this.repo.createQueryBuilder(this.rootAlias);
+
+    this.getWhere(where, queryBuilderA);
+
+    const stringSelect = this.getSelectStrings(select);
+    queryBuilderA.select(stringSelect);
+
+    this.addLeftJoin(queryBuilderA); //this should be second to last
+
+    return (orderBy: OrderBy<result>, skip: number, take: number) => {
+      const queryBulderB = queryBuilderA.clone();
+
+      Object.keys(orderBy).forEach((key) =>
+        queryBulderB.addOrderBy(key, orderBy[key])
+      );
+
+      queryBulderB.skip(skip);
+      queryBulderB.take(take);
+      return queryBulderB.getRawMany<result>();
+    };
   }
 
   selectAll(where?: ConditionNode<entity>): Promise<entity[]> {
