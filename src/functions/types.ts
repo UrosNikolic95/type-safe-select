@@ -60,9 +60,9 @@ export type OrderBy<result> = {
 export type SelectSpecific<entity, result> = {
   select: Select<entity, result>;
   where?: ConditionNode<entity>;
-  orderBy: OrderBy<result>;
-  skip: number;
-  take: number;
+  orderBy?: OrderBy<result>;
+  skip?: number;
+  take?: number;
 };
 
 export type GroupByOperation<entity> = {

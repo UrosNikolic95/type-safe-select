@@ -186,12 +186,13 @@ class OneTimeQueryHelper<entity> {
 
     this.addLeftJoin(queryBuilder); //this should be second to last
 
-    Object.keys(orderBy).forEach((key) =>
-      queryBuilder.addOrderBy(key, orderBy[key])
-    );
+    if (orderBy)
+      Object.keys(orderBy).forEach((key) =>
+        queryBuilder.addOrderBy(key, orderBy[key])
+      );
 
-    queryBuilder.skip(skip);
-    queryBuilder.take(take);
+    if (skip) queryBuilder.skip(skip);
+    if (take) queryBuilder.take(take);
 
     return queryBuilder.getRawMany<result>();
   }
@@ -210,12 +211,13 @@ class OneTimeQueryHelper<entity> {
     return (orderBy: OrderBy<result>, skip: number, take: number) => {
       const queryBulderB = queryBuilderA.clone();
 
-      Object.keys(orderBy).forEach((key) =>
-        queryBulderB.addOrderBy(key, orderBy[key])
-      );
+      if (orderBy)
+        Object.keys(orderBy).forEach((key) =>
+          queryBulderB.addOrderBy(key, orderBy[key])
+        );
 
-      queryBulderB.skip(skip);
-      queryBulderB.take(take);
+      if (skip) queryBulderB.skip(skip);
+      if (take) queryBulderB.take(take);
       return queryBulderB.getRawMany<result>();
     };
   }
