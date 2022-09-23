@@ -191,8 +191,8 @@ class OneTimeQueryHelper<entity> {
         queryBuilder.addOrderBy(key, orderBy[key])
       );
 
-    if (offset) queryBuilder.skip(offset);
-    if (limit) queryBuilder.take(limit);
+    if (offset) queryBuilder.offset(offset);
+    if (limit) queryBuilder.limit(limit);
 
     return queryBuilder.getRawMany<result>();
   }
@@ -216,8 +216,8 @@ class OneTimeQueryHelper<entity> {
           queryBulderB.addOrderBy(key, orderBy[key])
         );
 
-      if (offset) queryBulderB.skip(offset);
-      if (limit) queryBulderB.take(limit);
+      if (offset) queryBulderB.offset(offset);
+      if (limit) queryBulderB.limit(limit);
 
       return queryBulderB.getRawMany<result>();
     };

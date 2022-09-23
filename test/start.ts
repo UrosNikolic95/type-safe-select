@@ -54,6 +54,23 @@ test("Test 2", async () => {
   expect(result.length).toBe(2);
 });
 
+test("Test 3", async () => {
+  const repo = getRepository(Test1Entity);
+  const queryHelper = new QueryHelper(repo);
+  const n = 3;
+
+  const result = await queryHelper.selectSpecific({
+    select: {
+      selected1: (el) => el.id,
+      selected2: (el) => el.test2.id,
+      selected3: (el) => el.test2.test1.id,
+    },
+    limit: n,
+  });
+  console.log(result);
+  expect(result.length).toBe(n);
+});
+
 afterAll(async () => {
   const connection = await TestingHelper.getConnection();
   await connection.close();
