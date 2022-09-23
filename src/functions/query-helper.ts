@@ -176,7 +176,7 @@ class OneTimeQueryHelper<entity> {
   selectSpecific<result>(
     query: SelectSpecific<entity, result>
   ): Promise<result[]> {
-    const { where, select, orderBy, skip, take } = query;
+    const { where, select, orderBy, offset, limit } = query;
     const queryBuilder = this.repo.createQueryBuilder(this.rootAlias);
 
     this.getWhere(where, queryBuilder);
@@ -191,8 +191,8 @@ class OneTimeQueryHelper<entity> {
         queryBuilder.addOrderBy(key, orderBy[key])
       );
 
-    if (skip) queryBuilder.skip(skip);
-    if (take) queryBuilder.take(take);
+    if (offset) queryBuilder.skip(offset);
+    if (limit) queryBuilder.take(limit);
 
     return queryBuilder.getRawMany<result>();
   }
@@ -208,7 +208,7 @@ class OneTimeQueryHelper<entity> {
 
     this.addLeftJoin(queryBuilderA); //this should be second to last
 
-    return (orderBy: OrderBy<result>, skip: number, take: number) => {
+    return (orderBy: OrderBy<result>, offset: number, limit: number) => {
       const queryBulderB = queryBuilderA.clone();
 
       if (orderBy)
@@ -216,8 +216,9 @@ class OneTimeQueryHelper<entity> {
           queryBulderB.addOrderBy(key, orderBy[key])
         );
 
-      if (skip) queryBulderB.skip(skip);
-      if (take) queryBulderB.take(take);
+      if (offset) queryBulderB.skip(offset);
+      if (limit) queryBulderB.take(limit);
+
       return queryBulderB.getRawMany<result>();
     };
   }
