@@ -20,13 +20,12 @@ export class TestingHelper {
         subscribers: ["prepare-test/subscribers/**/*.ts"],
       });
     }
+    await init();
     return TestingHelper.connection;
   }
 }
 
-beforeAll(async () => {
-  await TestingHelper.getConnection();
-
+async function init() {
   const t2_1 = await Test2Entity.create({
     id: 1,
     field1: "A",
@@ -73,4 +72,4 @@ beforeAll(async () => {
     test2_id: t2_1.id,
     field2: 3,
   } as Test1Entity).save();
-});
+}
