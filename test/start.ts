@@ -10,7 +10,8 @@ beforeAll(async () => {
 });
 
 test("Test 1", async () => {
-  const repo = getRepository(Test1Entity);
+  const conn = await TestingHelper.getConnection();
+  const repo = conn.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
 
   const result = await queryHelper.selectSpecific({
@@ -33,7 +34,8 @@ test("Test 1", async () => {
 });
 
 test("Test 2", async () => {
-  const repo = getRepository(Test1Entity);
+  const conn = await TestingHelper.getConnection();
+  const repo = conn.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
 
   const result = await queryHelper.selectGroupBy({
@@ -55,7 +57,8 @@ test("Test 2", async () => {
 });
 
 test("Test 3", async () => {
-  const repo = getRepository(Test1Entity);
+  const conn = await TestingHelper.getConnection();
+  const repo = conn.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
   const n = 3;
 
@@ -73,5 +76,5 @@ test("Test 3", async () => {
 
 afterAll(async () => {
   const connection = await TestingHelper.getConnection();
-  await connection.close();
+  await connection.destroy();
 });

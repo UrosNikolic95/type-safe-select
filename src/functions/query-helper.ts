@@ -1,13 +1,26 @@
 import {
   BaseEntity,
+  DataSource,
   EntityTarget,
+  QueryBuilder,
+  QueryRunner,
   Repository,
   SelectQueryBuilder,
+  ViewEntity,
+  getConnection,
 } from "typeorm";
 import { ConditionNode, ConditionValue, GroupBy, Obj, Select } from "../main";
-import { getPath } from "./helpers";
+import { DecoratorHelper, getPath } from "./helpers";
 import { Alias } from "./interfaces";
-import { GroupByQuery, GroupBySelect, OrderBy, SelectSpecific } from "./types";
+import {
+  F1,
+  F2,
+  Flatten,
+  GroupByQuery,
+  GroupBySelect,
+  OrderBy,
+  SelectSpecific,
+} from "./types";
 
 const rootStr = "root";
 
@@ -207,6 +220,35 @@ class OneTimeQueryHelper {
     return queryBuilder.getRawMany<result>();
   }
 
+  selectSpecificV2<entity extends BaseEntity, result>(
+    qr: DataSource,
+    entityClass: EntityTarget<entity>,
+    query: SelectSpecific<entity, result>
+  ) {
+    const { where, select, orderBy, offset, limit } = query;
+
+    const queryBuilder = qr
+      .createQueryBuilder()
+      .from(entityClass, this.rootAlias);
+
+    this.getWhere(where, queryBuilder);
+
+    const stringSelect = this.getSelectStrings(select);
+    queryBuilder.select(stringSelect);
+
+    this.addLeftJoin(queryBuilder); //this should be second to last
+
+    if (orderBy)
+      Object.keys(orderBy).forEach((key) =>
+        queryBuilder.addOrderBy(key, orderBy[key])
+      );
+
+    if (offset) queryBuilder.offset(offset);
+    if (limit) queryBuilder.limit(limit);
+
+    return queryBuilder;
+  }
+
   selectSpecificTwoStage<entity extends BaseEntity, result>(
     entityClass: Repository<entity>,
     query: SelectSpecific<entity, result>
@@ -330,7 +372,39 @@ export class QueryHelper<entity extends BaseEntity> {
     return new OneTimeQueryHelper().selectSpecific(this.repo, query);
   }
 
+  selectSpecificEntity<result>(query: SelectSpecific<entity, result>) {
+    return new OneTimeQueryHelper().selectSpecific(this.repo, query);
+  }
+
   selectGroupBy<result>(query: GroupByQuery<entity, result>) {
     return new OneTimeQueryHelper().selectGroupBy(this.repo, query);
+  }
+}
+
+export class ViewDecoratorHelper<entity extends BaseEntity, result> {
+  decoratorHelper: DecoratorHelper<(el: Flatten<entity>) => any>;
+
+  constructor(readonly entityClass: EntityTarget<entity>) {
+    this.decoratorHelper = new DecoratorHelper<(el: Flatten<entity>) => any>(
+      "view_data"
+    );
+  }
+
+  getClassDecorator() {
+    return ViewEntity({
+      expression: (conn) => {
+        return new OneTimeQueryHelper().selectSpecificV2(
+          conn,
+          this.entityClass,
+          {
+            select: this.decoratorHelper.get(this.entityClass),
+          }
+        );
+      },
+    });
+  }
+
+  getPropertyDecorator(val: (el: Flatten<entity>) => any) {
+    return this.decoratorHelper.set(val);
   }
 }

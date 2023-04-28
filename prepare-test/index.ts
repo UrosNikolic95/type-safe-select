@@ -1,13 +1,13 @@
-import { Connection, createConnection } from "typeorm";
+import { DataSource } from "typeorm";
 import { Test1Entity } from "./entities/test1.entitie";
 import { Test2Entity } from "./entities/test2.entitie";
 
 export class TestingHelper {
-  private static connection: Connection;
+  private static connection: DataSource;
 
   public static async getConnection() {
     if (!TestingHelper.connection) {
-      TestingHelper.connection = await createConnection({
+      TestingHelper.connection = new DataSource({
         type: "postgres",
         host: "localhost",
         port: 5432,
@@ -20,6 +20,7 @@ export class TestingHelper {
         subscribers: ["prepare-test/subscribers/**/*.ts"],
       });
     }
+    await TestingHelper.connection.initialize();
     await init();
     return TestingHelper.connection;
   }
