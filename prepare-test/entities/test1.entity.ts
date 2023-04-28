@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Test2Entity } from "./test2.entitie";
+import { Test2Entity } from "./test2.entity";
 
 @Entity()
 export class Test1Entity extends BaseEntity {

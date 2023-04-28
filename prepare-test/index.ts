@@ -1,6 +1,8 @@
 import { DataSource } from "typeorm";
-import { Test1Entity } from "./entities/test1.entitie";
-import { Test2Entity } from "./entities/test2.entitie";
+import { Test1Entity } from "./entities/test1.entity";
+import { Test2Entity } from "./entities/test2.entity";
+import { Test3View } from "./entities/test3-view.entity";
+// import { Test3View } from "./entities/test3-view.entity";
 
 export class TestingHelper {
   private static connection: DataSource;
@@ -16,12 +18,12 @@ export class TestingHelper {
         database: "test",
         synchronize: true,
         logging: false,
-        entities: ["prepare-test/entities/**/*.ts"],
+        entities: [Test1Entity, Test2Entity, Test3View],
         subscribers: ["prepare-test/subscribers/**/*.ts"],
       });
+      await TestingHelper.connection.initialize();
+      await init();
     }
-    await TestingHelper.connection.initialize();
-    await init();
     return TestingHelper.connection;
   }
 }

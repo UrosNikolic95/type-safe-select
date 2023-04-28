@@ -1,9 +1,9 @@
 import "reflect-metadata";
-import { getRepository } from "typeorm";
 import { TestingHelper } from "../prepare-test";
-import { Test1Entity } from "../prepare-test/entities/test1.entitie";
-import { Test2Entity } from "../prepare-test/entities/test2.entitie";
+import { Test1Entity } from "../prepare-test/entities/test1.entity";
 import { Equals, QueryHelper } from "../src/main";
+import { Test3View } from "../prepare-test/entities/test3-view.entity";
+// import { Test3View } from "../prepare-test/entities/test3-view.entity";
 
 beforeAll(async () => {
   await TestingHelper.getConnection();
@@ -52,7 +52,6 @@ test("Test 2", async () => {
       },
     },
   });
-  console.log(result);
   expect(result.length).toBe(2);
 });
 
@@ -70,8 +69,17 @@ test("Test 3", async () => {
     },
     limit: n,
   });
-  console.log(result);
   expect(result.length).toBe(n);
+});
+
+test("Test 4", async () => {
+  const conn = await TestingHelper.getConnection();
+  const repo = conn.getRepository(Test3View);
+  const result = await repo.find();
+  console.log({
+    result,
+  });
+  expect(result.length).toBeDefined();
 });
 
 afterAll(async () => {

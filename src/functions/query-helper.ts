@@ -191,7 +191,6 @@ class OneTimeQueryHelper {
 
     this.addLeftJoin(queryBuilder);
 
-    console.log(queryBuilder.getQuery());
     return queryBuilder.getRawMany<result>();
   }
 
@@ -381,30 +380,15 @@ export class QueryHelper<entity extends BaseEntity> {
   }
 }
 
-export class ViewDecoratorHelper<entity extends BaseEntity, result> {
-  decoratorHelper: DecoratorHelper<(el: Flatten<entity>) => any>;
-
-  constructor(readonly entityClass: EntityTarget<entity>) {
-    this.decoratorHelper = new DecoratorHelper<(el: Flatten<entity>) => any>(
-      "view_data"
-    );
-  }
-
-  getClassDecorator() {
-    return ViewEntity({
-      expression: (conn) => {
-        return new OneTimeQueryHelper().selectSpecificV2(
-          conn,
-          this.entityClass,
-          {
-            select: this.decoratorHelper.get(this.entityClass),
-          }
-        );
-      },
-    });
-  }
-
-  getPropertyDecorator(val: (el: Flatten<entity>) => any) {
-    return this.decoratorHelper.set(val);
-  }
+export function ViewDecoratorHelper<entity extends BaseEntity, result>(
+  entityClass: EntityTarget<entity>,
+  select: Select<Partial<entity>, Partial<result>>
+) {
+  return ViewEntity({
+    expression: (conn) => {
+      return new OneTimeQueryHelper().selectSpecificV2(conn, entityClass, {
+        select,
+      });
+    },
+  });
 }
