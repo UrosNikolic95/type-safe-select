@@ -37,3 +37,23 @@ export function getAllValuesFrom<T, R>(
     )
     .flat(depth) as unknown as R[];
 }
+
+export class DecoratorHelper<T> {
+  constructor(readonly key: string) {}
+
+  get(obj: any): { [key: string]: T } {
+    return Reflect.getMetadata(this.key, obj);
+  }
+
+  set(value: T): PropertyDecorator {
+    return (obj, property) => {
+      const key = property as string;
+      const data = this.get(obj);
+      if (data) {
+        data[key] = value;
+      } else {
+        Reflect.defineMetadata(this.key, { [key]: value }, obj);
+      }
+    };
+  }
+}
