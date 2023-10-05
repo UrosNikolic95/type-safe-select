@@ -244,6 +244,7 @@ class OneTimeQueryHelper<entity> {
 
   selectSpecificTree(query: DeepPartial<SelectTree<entity>>) {
     const qb = this.repo.createQueryBuilder(this.rootAlias);
+    qb.select([]);
     this.selectSpecificRecursive(
       qb,
       this.repo.metadata,
@@ -263,13 +264,13 @@ class OneTimeQueryHelper<entity> {
     Object.keys(obj).forEach((field) => {
       const column = meta.columns.find((el) => el.propertyName == field);
 
-      if (column) qb.addSelect(`${alias}.${field} as ${alias}_${field}`);
+      if (column) qb.addSelect(`${alias}.${field}`);
       const varName = this.addVariable(obj[field]);
       if (column) qb.andWhere(`${alias}.${field} = :${varName}`);
       const relation = meta.relations.find((el) => el.propertyName == field);
       if (relation) {
         const newAlias = this.createAlias();
-        qb.leftJoinAndSelect(`${alias}.${field}`, newAlias);
+        qb.leftJoin(`${alias}.${field}`, newAlias);
         const other =
           relation.entityMetadata.target == meta.target
             ? relation.inverseEntityMetadata

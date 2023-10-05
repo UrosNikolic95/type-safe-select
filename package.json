@@ -34,7 +34,7 @@
   "dependencies": {
     "reflect-metadata": "^0.1.13",
     "ts-node": "^10.4.0",
-    "typeorm": "^0.3.10"
+    "typeorm": "^0.3.17"
   },
   "directories": {
     "lib": "lib"

@@ -4,6 +4,7 @@ import { TestingHelper } from "../prepare-test";
 import { Test1Entity } from "../prepare-test/entities/test1.entitie";
 import { Equals, QueryHelper } from "../src/main";
 import { writeFileSync } from "fs";
+import { Test2Entity } from "../prepare-test/entities/test2.entitie";
 
 let connection: DataSource;
 beforeAll(async () => {
@@ -81,12 +82,39 @@ test("Test 4", async () => {
       id: 1,
       test2: {
         id: 1,
+        field1: "A",
       },
     },
   });
-  console.log(result);
-  writeFileSync("view.json", JSON.stringify(result));
-  expect(result.length).toBeDefined();
+
+  expect(result.length).not.toBe(0);
+  expect(result[0].id).toBe(1);
+  expect(result[0].test2.id).toBe(1);
+  expect(result[0].test2.field1).toBe("A");
+  expect(Object.keys(result[0].test2).length).toBe(2);
+  expect(Object.keys(result[0]).length).toBe(2);
+});
+
+test("Test 5", async () => {
+  const repo = connection.getRepository(Test2Entity);
+  const queryHelper = new QueryHelper(repo);
+
+  const result = await queryHelper.selectSpecificTree({
+    where: {
+      id: 1,
+      test1: {
+        id: 1,
+        field1: "A",
+      },
+    },
+  });
+
+  expect(result.length).not.toBe(0);
+  expect(result[0].id).toBe(1);
+  expect(result[0].test1[0].id).toBe(1);
+  expect(result[0].test1[0].field1).toBe("A");
+  expect(Object.keys(result[0].test1[0]).length).toBe(2);
+  expect(Object.keys(result[0]).length).toBe(2);
 });
 
 afterAll(async () => {
