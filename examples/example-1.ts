@@ -7,13 +7,13 @@ async function FirstExample() {
 
   const queryHelper = new QueryHelper(repo);
 
-  const found = await queryHelper.selectSpecific(
-    {
+  const found = await queryHelper.selectSpecific({
+    select: {
       field1: (el) => el.test2.test1.id,
       field2: (el) => el.test2.id,
       field3: (el) => el.id,
     },
-    {
+    where: {
       and: [
         {
           or: [
@@ -50,8 +50,8 @@ async function FirstExample() {
           },
         },
       ],
-    }
-  );
+    },
+  });
 }
 
 setTimeout(FirstExample, 1000);

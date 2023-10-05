@@ -81,3 +81,7 @@ export type GroupByQuery<entity = any, result = any> = {
   select: GroupBySelect<entity, result>;
   where?: ConditionNode<entity>;
 };
+
+export type SelectTree<entity = any> = {
+  where: Flatten<entity>;
+};

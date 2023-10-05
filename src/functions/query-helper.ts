@@ -1,8 +1,19 @@
-import { Repository, SelectQueryBuilder } from "typeorm";
+import {
+  DeepPartial,
+  EntityMetadata,
+  Repository,
+  SelectQueryBuilder,
+} from "typeorm";
 import { ConditionNode, ConditionValue, GroupBy, Obj, Select } from "../main";
 import { getPath } from "./helpers";
 import { Alias } from "./interfaces";
-import { GroupByQuery, GroupBySelect, OrderBy, SelectSpecific } from "./types";
+import {
+  GroupByQuery,
+  GroupBySelect,
+  OrderBy,
+  SelectSpecific,
+  SelectTree,
+} from "./types";
 
 const rootStr = "root";
 
@@ -231,6 +242,43 @@ class OneTimeQueryHelper<entity> {
     return query.getMany();
   }
 
+  selectSpecificTree(query: DeepPartial<SelectTree<entity>>) {
+    const qb = this.repo.createQueryBuilder(this.rootAlias);
+    this.selectSpecificRecursive(
+      qb,
+      this.repo.metadata,
+      this.rootAlias,
+      query.where
+    );
+    qb.setParameters(this.variables);
+    return qb;
+  }
+
+  selectSpecificRecursive(
+    qb: SelectQueryBuilder<entity>,
+    meta: EntityMetadata,
+    alias: string,
+    obj: any
+  ) {
+    Object.keys(obj).forEach((field) => {
+      const column = meta.columns.find((el) => el.propertyName == field);
+
+      if (column) qb.addSelect(`${alias}.${field} as ${alias}_${field}`);
+      const varName = this.addVariable(obj[field]);
+      if (column) qb.andWhere(`${alias}.${field} = :${varName}`);
+      const relation = meta.relations.find((el) => el.propertyName == field);
+      if (relation) {
+        const newAlias = this.createAlias();
+        qb.leftJoinAndSelect(`${alias}.${field}`, newAlias);
+        const other =
+          relation.entityMetadata.target == meta.target
+            ? relation.inverseEntityMetadata
+            : relation.entityMetadata;
+        this.selectSpecificRecursive(qb, other, newAlias, obj[field]);
+      }
+    });
+  }
+
   private checkConditionNode(conditionNode: ConditionNode<entity>): void {
     const propNum = Object.keys(conditionNode).length;
     if (propNum > 1) {
@@ -307,6 +355,11 @@ export class QueryHelper<entity> {
   selectSpecific<result>(query: SelectSpecific<entity, result>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
     return oneTime.selectSpecific(query);
+  }
+
+  selectSpecificTree(query: DeepPartial<SelectTree<entity>>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectSpecificTree(query).getMany();
   }
 
   selectGroupBy<result>(query: GroupByQuery<entity, result>) {

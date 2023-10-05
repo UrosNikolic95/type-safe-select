@@ -1,16 +1,17 @@
 import "reflect-metadata";
-import { getRepository } from "typeorm";
+import { Connection, DataSource, getRepository } from "typeorm";
 import { TestingHelper } from "../prepare-test";
 import { Test1Entity } from "../prepare-test/entities/test1.entitie";
-import { Test2Entity } from "../prepare-test/entities/test2.entitie";
 import { Equals, QueryHelper } from "../src/main";
+import { writeFileSync } from "fs";
 
+let connection: DataSource;
 beforeAll(async () => {
-  await TestingHelper.getConnection();
+  connection = await TestingHelper.getConnection();
 });
 
 test("Test 1", async () => {
-  const repo = getRepository(Test1Entity);
+  const repo = connection.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
 
   const result = await queryHelper.selectSpecific({
@@ -33,7 +34,7 @@ test("Test 1", async () => {
 });
 
 test("Test 2", async () => {
-  const repo = getRepository(Test1Entity);
+  const repo = connection.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
 
   const result = await queryHelper.selectGroupBy({
@@ -55,7 +56,7 @@ test("Test 2", async () => {
 });
 
 test("Test 3", async () => {
-  const repo = getRepository(Test1Entity);
+  const repo = connection.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
   const n = 3;
 
@@ -71,7 +72,24 @@ test("Test 3", async () => {
   expect(result.length).toBe(n);
 });
 
+test("Test 4", async () => {
+  const repo = connection.getRepository(Test1Entity);
+  const queryHelper = new QueryHelper(repo);
+
+  const result = await queryHelper.selectSpecificTree({
+    where: {
+      id: 1,
+      test2: {
+        id: 1,
+      },
+    },
+  });
+  console.log(result);
+  writeFileSync("view.json", JSON.stringify(result));
+  expect(result.length).toBeDefined();
+});
+
 afterAll(async () => {
   const connection = await TestingHelper.getConnection();
-  await connection.close();
+  await connection.destroy();
 });
