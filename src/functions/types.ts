@@ -84,4 +84,6 @@ export type GroupByQuery<entity = any, result = any> = {
 
 export type SelectTree<entity = any> = {
   where: Flatten<entity>;
+  take: number;
+  skip: number;
 };

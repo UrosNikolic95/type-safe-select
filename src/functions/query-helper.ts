@@ -242,7 +242,7 @@ class OneTimeQueryHelper<entity> {
     return query.getMany();
   }
 
-  selectSpecificTree(query: DeepPartial<SelectTree<entity>>) {
+  getManyQuery(query: DeepPartial<SelectTree<entity>>) {
     const qb = this.repo.createQueryBuilder(this.rootAlias);
     qb.select([]);
     this.selectSpecificRecursive(
@@ -358,9 +358,14 @@ export class QueryHelper<entity> {
     return oneTime.selectSpecific(query);
   }
 
-  selectSpecificTree(query: DeepPartial<SelectTree<entity>>) {
+  getMany(query: DeepPartial<SelectTree<entity>>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
-    return oneTime.selectSpecificTree(query).getMany();
+    return oneTime.getManyQuery(query).getMany();
+  }
+
+  getManyAndCount(query: DeepPartial<SelectTree<entity>>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.getManyQuery(query).getManyAndCount();
   }
 
   selectGroupBy<result>(query: GroupByQuery<entity, result>) {
