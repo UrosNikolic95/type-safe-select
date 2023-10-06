@@ -360,12 +360,20 @@ export class QueryHelper<entity> {
 
   getMany(query: DeepPartial<SelectTree<entity>>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
-    return oneTime.getManyQuery(query).getMany();
+    return oneTime
+      .getManyQuery(query)
+      .skip(query.skip)
+      .take(query.take)
+      .getMany();
   }
 
   getManyAndCount(query: DeepPartial<SelectTree<entity>>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
-    return oneTime.getManyQuery(query).getManyAndCount();
+    return oneTime
+      .getManyQuery(query)
+      .skip(query.skip)
+      .take(query.take)
+      .getManyAndCount();
   }
 
   selectGroupBy<result>(query: GroupByQuery<entity, result>) {
