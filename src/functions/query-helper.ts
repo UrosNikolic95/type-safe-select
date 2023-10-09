@@ -264,9 +264,15 @@ class OneTimeQueryHelper<entity> {
     Object.keys(obj).forEach((field) => {
       const column = meta.columns.find((el) => el.propertyName == field);
 
-      if (column) qb.addSelect(`${alias}.${field}`);
-      const varName = this.addVariable(obj[field]);
-      if (column) qb.andWhere(`${alias}.${field} = :${varName}`);
+      if (column) {
+        qb.addSelect(`${alias}.${field}`);
+        if (obj[field] != "*") {
+          const varName = this.addVariable(obj[field]);
+          if (Array.isArray(obj[field]))
+            qb.andWhere(`${alias}.${field} in (:...${varName})`);
+          else qb.andWhere(`${alias}.${field} = :${varName}`);
+        }
+      }
       const relation = meta.relations.find((el) => el.propertyName == field);
       if (relation) {
         const newAlias = this.createAlias();

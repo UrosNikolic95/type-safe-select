@@ -83,7 +83,13 @@ export type GroupByQuery<entity = any, result = any> = {
 };
 
 export type SelectTree<entity = any> = {
-  where: Flatten<entity>;
+  where: Where<Flatten<entity>>;
   take: number;
   skip: number;
+};
+
+export type Where<entity> = {
+  [key in keyof entity]: entity[key] extends Object
+    ? Where<entity[key]>
+    : entity[key] | entity[key][] | "*";
 };
