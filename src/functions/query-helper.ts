@@ -252,6 +252,8 @@ class OneTimeQueryHelper<entity> {
       query.where
     );
     qb.setParameters(this.variables);
+    if (query.skip) qb.skip(query.skip);
+    if (query.take) qb.take(query.take);
     return qb;
   }
 
@@ -366,20 +368,12 @@ export class QueryHelper<entity> {
 
   getMany(query: SelectTree<entity>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
-    return oneTime
-      .getManyQuery(query)
-      .skip(query.skip)
-      .take(query.take)
-      .getMany();
+    return oneTime.getManyQuery(query).getMany();
   }
 
   getManyAndCount(query: DeepPartial<SelectTree<entity>>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
-    return oneTime
-      .getManyQuery(query)
-      .skip(query.skip)
-      .take(query.take)
-      .getManyAndCount();
+    return oneTime.getManyQuery(query).getManyAndCount();
   }
 
   selectGroupBy<result>(query: GroupByQuery<entity, result>) {
