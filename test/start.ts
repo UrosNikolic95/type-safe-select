@@ -77,7 +77,7 @@ test("Test 4", async () => {
   const repo = connection.getRepository(Test1Entity);
   const queryHelper = new QueryHelper(repo);
 
-  const result = await queryHelper.selectSpecificTree({
+  const result = await queryHelper.getMany({
     where: {
       id: 1,
       test2: {
@@ -99,7 +99,7 @@ test("Test 5", async () => {
   const repo = connection.getRepository(Test2Entity);
   const queryHelper = new QueryHelper(repo);
 
-  const result = await queryHelper.selectSpecificTree({
+  const result = await queryHelper.getMany({
     where: {
       id: 1,
       test1: {
@@ -115,6 +115,25 @@ test("Test 5", async () => {
   expect(result[0].test1[0].field1).toBe("A");
   expect(Object.keys(result[0].test1[0]).length).toBe(2);
   expect(Object.keys(result[0]).length).toBe(2);
+});
+
+test("Test 6", async () => {
+  const repo = connection.getRepository(Test2Entity);
+  const queryHelper = new QueryHelper(repo);
+
+  const result = await queryHelper.getMany({
+    where: {
+      id: [1, 2, 3],
+      test1: {
+        field1: "*",
+      },
+    },
+  });
+
+  expect(result.length).toBe(3);
+  expect(result[0].test1).toBeDefined();
+  expect(Object.keys(result[0]).length).toBe(2);
+  expect(Object.keys(result[0].test1[0]).length).toBe(1);
 });
 
 afterAll(async () => {

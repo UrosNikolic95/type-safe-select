@@ -1,10 +1,10 @@
-export type Flatten<T> = F1<F2<T>>;
+export type Flatten<T> = FlattenFields<FlattenArray<T>>;
 
-export type F1<T> = {
-  [P in keyof T]: T[P] extends Object ? Flatten<T[P]> : T[P];
+export type FlattenFields<T> = {
+  [P in keyof T]: Flatten<T[P]>;
 };
 
-export type F2<T> = T extends Array<infer el> ? F2<el> : T;
+export type FlattenArray<T> = T extends Array<infer el> ? FlattenArray<el> : T;
 
 export type Select<entity = any, result = any> = {
   [property in keyof result]: (el: Flatten<entity>) => result[property];
@@ -84,12 +84,12 @@ export type GroupByQuery<entity = any, result = any> = {
 
 export type SelectTree<entity = any> = {
   where: Where<Flatten<entity>>;
-  take: number;
-  skip: number;
+  take?: number;
+  skip?: number;
 };
 
 export type Where<entity> = {
-  [key in keyof entity]: entity[key] extends Object
-    ? Where<entity[key]>
-    : entity[key] | entity[key][] | "*";
+  [key in keyof entity]?: entity[key] extends Number | String | Date
+    ? entity[key] | entity[key][] | "*"
+    : Where<entity[key]>;
 };

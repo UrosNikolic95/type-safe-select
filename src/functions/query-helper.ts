@@ -364,7 +364,7 @@ export class QueryHelper<entity> {
     return oneTime.selectSpecific(query);
   }
 
-  getMany(query: DeepPartial<SelectTree<entity>>) {
+  getMany(query: SelectTree<entity>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
     return oneTime
       .getManyQuery(query)
