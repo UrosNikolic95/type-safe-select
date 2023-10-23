@@ -136,6 +136,24 @@ test("Test 6", async () => {
   expect(Object.keys(result[0].test1[0]).length).toBe(1);
 });
 
+test("Test 7", async () => {
+  const repo = connection.getRepository(Test2Entity);
+  const queryHelper = new QueryHelper(repo);
+
+  const result = await queryHelper.getManyPaginated({
+    where: {
+      id: "*",
+      test1: {
+        field1: "*",
+      },
+    },
+    pageSize: 2,
+    pageNumber: 1,
+  });
+  console.log(result);
+  expect(result.items.length).toBe(result.pageSize);
+});
+
 afterAll(async () => {
   const connection = await TestingHelper.getConnection();
   await connection.destroy();

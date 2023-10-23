@@ -393,6 +393,7 @@ export class QueryHelper<entity> {
       count,
       pageSize,
       pageNumber,
+      maxPages: Math.ceil(count / pageSize),
       items,
     };
   }
