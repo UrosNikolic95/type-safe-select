@@ -13,6 +13,7 @@ import {
   OrderBy,
   SelectSpecific,
   SelectTree,
+  SelectTreePaginated,
 } from "./types";
 
 const rootStr = "root";
@@ -371,9 +372,29 @@ export class QueryHelper<entity> {
     return oneTime.getManyQuery(query).getMany();
   }
 
-  getManyAndCount(query: DeepPartial<SelectTree<entity>>) {
+  getManyAndCount(query: SelectTree<entity>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
     return oneTime.getManyQuery(query).getManyAndCount();
+  }
+
+  async getManyPaginated(query: SelectTreePaginated<entity>) {
+    const { pageSize = 10, pageNumber = 1, where } = query;
+    const take = pageSize;
+    const skip = (pageNumber - 1) * pageSize;
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    const [items, count] = await oneTime
+      .getManyQuery({
+        where,
+        skip,
+        take,
+      })
+      .getManyAndCount();
+    return {
+      count,
+      pageSize,
+      pageNumber,
+      items,
+    };
   }
 
   selectGroupBy<result>(query: GroupByQuery<entity, result>) {

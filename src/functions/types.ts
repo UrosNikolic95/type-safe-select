@@ -88,6 +88,12 @@ export type SelectTree<entity = any> = {
   skip?: number;
 };
 
+export type SelectTreePaginated<entity = any> = {
+  where: Where<Flatten<entity>>;
+  pageSize?: number;
+  pageNumber?: number;
+};
+
 export type Where<entity> = {
   [key in keyof entity]?: entity[key] extends Number | String | Date
     ? entity[key] | entity[key][] | "*"
