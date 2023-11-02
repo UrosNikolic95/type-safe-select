@@ -269,7 +269,11 @@ class OneTimeQueryHelper<entity> {
 
       if (column) {
         qb.addSelect(`${alias}.${field}`);
-        if (obj[field] != "*") {
+        if (
+          obj[field] != "*" ||
+          obj[field] === undefined ||
+          obj[field] === null
+        ) {
           const varName = this.addVariable(obj[field]);
           if (Array.isArray(obj[field]))
             qb.andWhere(`${alias}.${field} in (:...${varName})`);
