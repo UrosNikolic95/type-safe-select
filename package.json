@@ -1,6 +1,6 @@
 {
   "name": "type-safe-select",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "description": "",
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
