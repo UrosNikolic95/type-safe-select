@@ -52,7 +52,6 @@ test("Test 2", async () => {
       },
     },
   });
-  console.log(result);
   expect(result.length).toBe(2);
 });
 
@@ -69,7 +68,6 @@ test("Test 3", async () => {
     },
     limit: n,
   });
-  console.log(result);
   expect(result.length).toBe(n);
 });
 
@@ -150,7 +148,6 @@ test("Test 7", async () => {
     pageSize: 2,
     pageNumber: 1,
   });
-  console.log(result);
   expect(result.items.length).toBe(result.pageSize);
 });
 

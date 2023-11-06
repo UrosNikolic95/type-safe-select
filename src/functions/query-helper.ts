@@ -43,14 +43,6 @@ class OneTimeQueryHelper<entity> {
     return "alias_" + this.aliasCounter++;
   }
 
-  addSeparatePath(path: string[]): string {
-    const key = this.getSeparatePathString(path);
-    if (!this.aliasMapping[key]) {
-      this.aliasMapping[key] = this.createAlias();
-    }
-    return this.aliasMapping[key];
-  }
-
   addPath(path: string[]): string {
     const key = this.getPathString(path);
     if (!this.aliasMapping[key]) {
@@ -74,26 +66,8 @@ class OneTimeQueryHelper<entity> {
     });
   }
 
-  addSeparateLastField(path: string[]): string {
-    this.addAllPaths(path);
-
-    const last = path[path.length - 1];
-    const previousAlias = this.getAlias(path.slice(0, path.length - 1));
-    const currentAlias = this.addSeparatePath(path);
-
-    this.joins[currentAlias] = {
-      association: previousAlias + "." + last,
-      alias: currentAlias,
-    };
-    return currentAlias;
-  }
-
   getPathString(path: string[]): string {
     return [rootStr, ...path].join();
-  }
-
-  getSeparatePathString(path: string[]): string {
-    return [rootStr, ...path].join() + "_separated";
   }
 
   getAlias(path: string[]): string {
@@ -181,7 +155,6 @@ class OneTimeQueryHelper<entity> {
 
     this.addLeftJoin(queryBuilder);
 
-    console.log(queryBuilder.getQuery());
     return queryBuilder.getRawMany<result>();
   }
 
@@ -284,11 +257,12 @@ class OneTimeQueryHelper<entity> {
       if (relation) {
         const newAlias = this.createAlias();
         qb.leftJoin(`${alias}.${field}`, newAlias);
-        const other =
-          relation.entityMetadata.target == meta.target
-            ? relation.inverseEntityMetadata
-            : relation.entityMetadata;
-        this.selectSpecificRecursive(qb, other, newAlias, obj[field]);
+        this.selectSpecificRecursive(
+          qb,
+          relation.inverseEntityMetadata,
+          newAlias,
+          obj[field]
+        );
       }
     });
   }
