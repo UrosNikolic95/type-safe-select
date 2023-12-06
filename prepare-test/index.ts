@@ -1,6 +1,6 @@
 import { DataSource } from "typeorm";
-import { Test1Entity } from "./entities/test1.entitie";
-import { Test2Entity } from "./entities/test2.entitie";
+import { Test1Entity } from "./entities/test1.entity";
+import { Test2Entity } from "./entities/test2.entity";
 
 export class TestingHelper {
   private static connection: DataSource;

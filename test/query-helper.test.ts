@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import { Connection, DataSource, getRepository } from "typeorm";
 import { TestingHelper } from "../prepare-test";
-import { Test1Entity } from "../prepare-test/entities/test1.entitie";
+import { Test1Entity } from "../prepare-test/entities/test1.entity";
 import { Equals, QueryHelper } from "../src/main";
 import { writeFileSync } from "fs";
-import { Test2Entity } from "../prepare-test/entities/test2.entitie";
+import { Test2Entity } from "../prepare-test/entities/test2.entity";
 
 let connection: DataSource;
 beforeAll(async () => {
