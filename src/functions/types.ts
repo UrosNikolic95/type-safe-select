@@ -54,7 +54,7 @@ export type ExeptPropertiesWithType<ObjectType, PropertyType> = {
 };
 
 export type OrderBy<result> = {
-  [key in keyof result]: "ASC" | "DESC";
+  [key in keyof result]?: "ASC" | "DESC";
 };
 
 export type SelectSpecific<entity, result> = {

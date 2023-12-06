@@ -1,6 +1,7 @@
 import { DataSource } from "typeorm";
 import { Test1Entity } from "./entities/test1.entity";
 import { Test2Entity } from "./entities/test2.entity";
+import { Test3Entity } from "./entities/test3.entity";
 
 export class TestingHelper {
   private static connection: DataSource;
@@ -74,4 +75,47 @@ beforeAll(async () => {
     test2_id: t2_1.id,
     field2: 3,
   } as Test1Entity).save();
+
+  await Test3Entity.create({
+    id: 1,
+    data: {
+      date: new Date(),
+      str: "1",
+      f1: {
+        f2: {
+          f3: {
+            q1: 1,
+          },
+        },
+      },
+    },
+  } as Test3Entity).save();
+
+  await Test3Entity.create({
+    id: 2,
+    data: {
+      date: new Date(),
+      str: "2",
+      f1: {
+        f2: [
+          {
+            f3: {
+              q1: 2,
+            },
+          },
+          {
+            f3: {
+              q1: 3,
+            },
+          },
+          ,
+          {
+            f3: {
+              q1: 4,
+            },
+          },
+        ],
+      },
+    },
+  } as Test3Entity).save();
 });
