@@ -44,7 +44,7 @@ test("select helper test 1", async () => {
 
   console.log(s2);
   if (s2.table) {
-    const data = await connection.query(s2.table);
+    const data = await s2.selectData(connection);
     console.log({
       data,
       s1: typeof data[0].s1,

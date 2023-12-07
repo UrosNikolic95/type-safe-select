@@ -1,3 +1,4 @@
+import { DataSource } from "typeorm";
 import { getPath } from "./helpers";
 import { Flatten, PathGetter } from "./types";
 
@@ -72,7 +73,9 @@ export class SelectHelper<input> {
     });
   }
 
-  unionAll() {}
+  selectData(dataSource: DataSource): Promise<input[]> {
+    return dataSource.query(this.table);
+  }
 
   selectLastFromEachGroup(data: selectLast<input>) {
     const partitionFIelds = data.partitionBy.map((el) => jsonPath(el));
