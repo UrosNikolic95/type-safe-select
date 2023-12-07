@@ -1,22 +1,15 @@
 import { getPath } from "./helpers";
 import { Flatten, PathGetter } from "./types";
 
-type columns<T1 = any> = {
-  [key in keyof T1]?: boolean;
+type dataType<input, output> = {
+  path: (el: input) => output;
+  unnest?: boolean;
+  cast?: "int" | "float" | "text" | "varchar" | "timestamp";
+  notNull?: boolean;
 };
 
-type castType<T1 = any> = {
-  [key in keyof T1]?: "int" | "float" | "text" | "varchar" | "timestamp";
-};
-
-type selectType<T1 = any, T2 = any> = {
-  [key in keyof T1]?: (el: T2) => T1[key];
-};
-
-type transform<T1> = {
-  unnest?: columns<T1>;
-  cast?: castType<T1>;
-  notNull?: columns<T1>;
+type jsonSelectType<input, output> = {
+  [key in keyof output]?: dataType<input, output[key]>;
 };
 
 interface selectLast<T> {
@@ -56,45 +49,30 @@ export class SelectHelper<input> {
     Object.assign(this, data);
   }
 
-  select<output>(selectParam: selectType<output, input>) {
+  jsonSelect<output>(selectParam: jsonSelectType<input, output>) {
+    const where: string[] = [];
     const selectRes: string[] = [];
     Object.keys(selectParam).forEach((key) => {
-      const totalPath = jsonPath(selectParam[key]);
-
-      selectRes.push(`${totalPath} AS ${key}`);
+      const data = selectParam[key] as dataType<input, output>;
+      const totalPath = jsonPath(data.path);
+      const unnested = data.unnest ? unnest(totalPath) : totalPath;
+      const casted = data?.cast
+        ? `((${unnested})::text)::${data?.cast}`
+        : unnested;
+      if (data.notNull) where.push(`${unnested} is not null`);
+      selectRes.push(`${casted} AS ${key}`);
     });
+    const whereStr = where.length ? "where " + where.join(" AND ") : "";
     const from = this.table.toLocaleLowerCase().includes("select")
       ? `(${this.table})`
       : this.table;
-    return new SelectHelper<output>({
-      table: `SELECT ${selectRes} from ${from} as ${this.alias}`,
+    return new SelectHelper<Flatten<output>>({
+      table: `SELECT ${selectRes} from ${from} as ${this.alias}  ${whereStr}`,
       columns: Object.keys(selectParam),
     });
   }
 
-  transform(transform: transform<input>) {
-    const selectRes: string[] = [];
-    const where: string[] = [];
-    this.columns.forEach((column) => {
-      const unnested = transform?.unnest?.[column] ? unnest(column) : column;
-
-      const casted = transform?.cast?.[column]
-        ? `${unnested}::text::${transform?.cast?.[column]}`
-        : unnested;
-
-      if (transform.notNull?.[column]) where.push(`${unnested} is not null`);
-
-      selectRes.push(`${casted} AS ${column}`);
-    });
-    const from = this.table.toLocaleLowerCase().includes("select")
-      ? `(${this.table})`
-      : this.table;
-    const whereStr = transform?.notNull ? "where " + where.join(" AND ") : "";
-    return new SelectHelper<Flatten<input>>({
-      table: `SELECT ${selectRes} from ${from} as ${this.alias} ${whereStr}`,
-      columns: this.columns,
-    });
-  }
+  unionAll() {}
 
   selectLastFromEachGroup(data: selectLast<input>) {
     const partitionFIelds = data.partitionBy.map((el) => jsonPath(el));

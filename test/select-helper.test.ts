@@ -15,51 +15,43 @@ test("select helper test 1", async () => {
   });
 
   const s2 = s1
-    .select({
-      q1_1: (el) => el.data.f1.f2,
-      q1_2: (el) => el.data.f1.f2,
-      q2: (el) => el.data.f1,
-      q3: (el) => el.id,
-      q4: (el) => el.data.date,
-    })
-    .transform({ unnest: { q1_1: true, q1_2: true } })
-    .select({
-      s1_1: (el) => el.q1_1.f3.q1,
-      s1_2: (el) => el.q1_2.f3.q1,
-      s2: (el) => el.q2.f2.f3.q1,
-      s3: (el) => el.q3,
-      s4: (el) => el.q4,
-    })
-    .transform({
-      cast: {
-        s1_1: "int",
-        s1_2: "int",
-        s2: "int",
-        s4: "timestamp",
+    .jsonSelect({
+      q1: {
+        path: (el) => el.id,
+        cast: "int",
       },
-      notNull: {
-        s1_1: true,
+      q2: {
+        path: (el) => el.data.f1.f2,
+        unnest: true,
+      },
+      q3: {
+        path: (el) => el.data.date,
+        cast: "timestamp",
       },
     })
-    .selectLastFromEachGroup({
-      partitionBy: [(el) => el.s1_1],
-      orderBy: [(el) => el.s2],
+    .jsonSelect({
+      s1: {
+        path: (el) => el.q1,
+      },
+      s2: {
+        path: (el) => el.q2.f3.q1,
+        notNull: true,
+      },
+      s3: {
+        path: (el) => el.q3,
+      },
     });
-
-  if (s2.table) {
-    const data = await connection.query(s2.table);
-    console.log(data);
-    console.log({
-      s1_1: typeof data[0].s1_1,
-      s1_2: typeof data[0].s1_2,
-      s2: typeof data[0].s2,
-      s3: typeof data[0].s3,
-      s4: typeof data[0].s4,
-      s4_b: data[0].s4 instanceof Date,
-    });
-  }
 
   console.log(s2);
+  if (s2.table) {
+    const data = await connection.query(s2.table);
+    console.log({
+      data,
+      s1: typeof data[0].s1,
+      s2: typeof data[0].s2,
+      s3: typeof data[0].s3,
+    });
+  }
 });
 
 afterAll(async () => {
