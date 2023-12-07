@@ -42,6 +42,19 @@ test("select helper test 1", async () => {
       },
     });
 
+  const s3 = s1.unionAll([
+    s2.jsonSelect({
+      e1: {
+        path: (el) => el.s1,
+      },
+    }),
+    s2.jsonSelect({
+      e1: {
+        path: (el) => el.s1,
+      },
+    }),
+  ]);
+
   console.log(s2);
   if (s2.table) {
     const data = await s2.selectData(connection);

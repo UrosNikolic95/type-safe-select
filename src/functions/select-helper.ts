@@ -77,6 +77,12 @@ export class SelectHelper<input> {
     return dataSource.query(this.table);
   }
 
+  unionAll<input>(selectHelpers: SelectHelper<input>[]) {
+    return new SelectHelper<input>({
+      table: selectHelpers.map((el) => el.table).join(" UNION ALL "),
+    });
+  }
+
   selectLastFromEachGroup(data: selectLast<input>) {
     const partitionFIelds = data.partitionBy.map((el) => jsonPath(el));
     const orderFields = data.orderBy
