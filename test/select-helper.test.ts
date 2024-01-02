@@ -1,7 +1,7 @@
 import { DataSource } from "typeorm";
 import { Test3Entity } from "../prepare-test/entities/test3.entity";
 import "../src/functions/select-helper";
-import { SelectHelper } from "../src/functions/select-helper";
+import { JsonSelectHelper } from "../src/functions/select-helper";
 import { TestingHelper } from "../prepare-test";
 
 let connection: DataSource;
@@ -10,7 +10,7 @@ beforeAll(async () => {
 });
 
 test("select helper test 1", async () => {
-  const s1 = new SelectHelper<Test3Entity>({
+  const s1 = new JsonSelectHelper<Test3Entity>({
     table: "entity3",
   });
 

@@ -41,12 +41,12 @@ function getLabel() {
   return "label_" + labelCounter++;
 }
 
-export class SelectHelper<input> {
+export class JsonSelectHelper<input> {
   alias = getLabel();
   table?: string;
   columns?: string[];
 
-  constructor(data: Partial<SelectHelper<any>>) {
+  constructor(data: Partial<JsonSelectHelper<any>>) {
     Object.assign(this, data);
   }
 
@@ -67,7 +67,7 @@ export class SelectHelper<input> {
     const from = this.table.toLocaleLowerCase().includes("select")
       ? `(${this.table})`
       : this.table;
-    return new SelectHelper<Flatten<output>>({
+    return new JsonSelectHelper<Flatten<output>>({
       table: `SELECT ${selectRes} from ${from} as ${this.alias}  ${whereStr}`,
       columns: Object.keys(selectParam),
     });
@@ -77,8 +77,8 @@ export class SelectHelper<input> {
     return dataSource.query(this.table);
   }
 
-  unionAll<input>(selectHelpers: SelectHelper<input>[]) {
-    return new SelectHelper<input>({
+  unionAll<input>(selectHelpers: JsonSelectHelper<input>[]) {
+    return new JsonSelectHelper<input>({
       table: selectHelpers.map((el) => el.table).join(" UNION ALL "),
     });
   }
@@ -90,7 +90,7 @@ export class SelectHelper<input> {
       .map((el) => `${el} desc`);
     const q1 = `SELECT ${this.columns}, row_number() over (partition by ${partitionFIelds} order by ${orderFields}) as rn from (${this.table}) as ${this.alias}`;
     const q2 = `SELECT ${this.columns} from (${q1}) as ${this.alias} where rn = 1`;
-    return new SelectHelper<input>({
+    return new JsonSelectHelper<input>({
       table: q2,
     });
   }
