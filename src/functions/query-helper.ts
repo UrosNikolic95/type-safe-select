@@ -182,18 +182,23 @@ class OneTimeQueryHelper<entity> {
     return queryBuilder.getRawMany<result>();
   }
 
-  selectSpecificTwoStage<result>(query: SelectSpecific<entity, result>) {
-    const { where, select } = query;
+  selectSpecificTwoStage<result>(select: Select<entity, result>) {
     const queryBuilderA = this.repo.createQueryBuilder(this.rootAlias);
-
-    this.getWhere(where, queryBuilderA);
 
     const stringSelect = this.getSelectStrings(select);
     queryBuilderA.select(stringSelect);
 
     this.addLeftJoin(queryBuilderA); //this should be second to last
 
-    return (orderBy: OrderBy<result>, offset: number, limit: number) => {
+    return ({
+      orderBy,
+      offset,
+      limit,
+    }: {
+      orderBy?: OrderBy<result>;
+      offset?: number;
+      limit?: number;
+    }) => {
       const queryBulderB = queryBuilderA.clone();
 
       if (orderBy)
@@ -341,6 +346,16 @@ export class QueryHelper<entity> {
   constructor(private readonly repo: Repository<entity>) {}
 
   selectSpecific<result>(query: SelectSpecific<entity, result>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectSpecific(query);
+  }
+
+  selectSpecificTwoStage<result>(query: Select<entity, result>) {
+    const oneTime = new OneTimeQueryHelper(this.repo);
+    return oneTime.selectSpecificTwoStage(query);
+  }
+
+  selectSpecificV2<result>(query: SelectSpecific<entity, result>) {
     const oneTime = new OneTimeQueryHelper(this.repo);
     return oneTime.selectSpecific(query);
   }

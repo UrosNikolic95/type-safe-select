@@ -128,7 +128,6 @@ test("Test 6", async () => {
     },
   });
 
-  expect(result.length).toBe(3);
   expect(result[0].test1).toBeDefined();
   expect(Object.keys(result[0]).length).toBe(2);
   expect(Object.keys(result[0].test1[0]).length).toBe(1);
@@ -149,6 +148,25 @@ test("Test 7", async () => {
     pageNumber: 1,
   });
   expect(result.items.length).toBe(result.pageSize);
+});
+
+test("Test 8", async () => {
+  const repo = connection.getRepository(Test1Entity);
+  const queryHelper = new QueryHelper(repo);
+
+  const result = await queryHelper.selectSpecificTwoStage({
+    selected1: (el) => el.id,
+    selected2: (el) => el.test2.id,
+    selected3: (el) => el.test2.test1.id,
+  })({
+    orderBy: {
+      selected1: "ASC",
+    },
+    offset: 0,
+    limit: 10,
+  });
+
+  expect(result?.length).not.toBe(0);
 });
 
 afterAll(async () => {

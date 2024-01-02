@@ -54,17 +54,6 @@ test("select helper test 1", async () => {
       },
     }),
   ]);
-
-  console.log(s2);
-  if (s2.table) {
-    const data = await s2.selectData(connection);
-    console.log({
-      data,
-      s1: typeof data[0].s1,
-      s2: typeof data[0].s2,
-      s3: typeof data[0].s3,
-    });
-  }
 });
 
 afterAll(async () => {

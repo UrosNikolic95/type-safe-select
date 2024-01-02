@@ -1,5 +1,5 @@
 import { getRepository } from "typeorm";
-import { Test1Entity } from "../prepare-test/entities/test1.entitie";
+import { Test1Entity } from "../prepare-test/entities/test1.entity";
 import { QueryHelper } from "../src/main";
 
 async function FirstExample() {
