@@ -35,15 +35,24 @@ function uniq<T>(data: T[]) {
 function makeUpdateQuery<T>(data: {
   tableName: String;
   data: Partial<T>[];
-  setKeys: KeyValue<T, boolean>;
+  setKeys?: KeyValue<T, boolean>;
+  incrementKeys?: KeyValue<T, boolean>;
   whereKeys: KeyValue<T, boolean>;
 }) {
-  const setKeys = Object.keys(data?.setKeys);
-  const whereKeys = Object.keys(data?.whereKeys);
-  const keys = uniq([...setKeys, ...whereKeys]);
+  const setKeys = data?.setKeys ? Object.keys(data?.setKeys) : [];
+  const whereKeys = data?.whereKeys ? Object.keys(data?.whereKeys) : [];
+  const incrementKeys = data?.incrementKeys
+    ? Object.keys(data?.incrementKeys)
+    : [];
+  const keys = uniq([...setKeys, ...whereKeys, ...incrementKeys]);
   const tableName = data?.tableName;
   const valuesAlias = "val";
-  const setStr = setKeys.map((key) => `${key} = ${valuesAlias}.${key}`);
+  const setStr = [
+    ...setKeys.map((key) => `${key} = ${valuesAlias}.${key}`),
+    ...incrementKeys.map(
+      (key) => `${key} = ${tableName}.${key} + ${valuesAlias}.${key}`
+    ),
+  ].join(", ");
   const fromStr = `(${values(data?.data, keys)}) as ${valuesAlias}(${keys})`;
   const whereStr = whereKeys
     .map((key) => `${tableName}.${key} = ${valuesAlias}.${key}`)
@@ -77,32 +86,39 @@ async function main() {
     tableName: table_name,
     data: [
       {
+        id: 0,
         field1: "1",
         field2: 1,
         test2_id: 1,
       },
       {
+        id: 1,
         field1: "1",
         field2: 1,
         test2_id: 1,
       },
       {
+        id: 2,
         field1: "1",
         field2: 1,
         test2_id: 1,
       },
       {
+        id: 3,
         field1: "1",
         field2: 1,
         test2_id: 1,
       },
     ],
     setKeys: {
-      field2: true,
+      field1: true,
       test2_id: true,
     },
+    incrementKeys: {
+      field2: true,
+    },
     whereKeys: {
-      field1: true,
+      id: true,
     },
   });
 
