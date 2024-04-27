@@ -213,14 +213,6 @@ class OneTimeQueryHelper<entity> {
     };
   }
 
-  selectAll(where?: ConditionNode<entity>): Promise<entity[]> {
-    const query = this.repo.createQueryBuilder(this.rootAlias);
-
-    this.getWhere(where, query);
-    this.addLeftJoinAndSelect(query);
-    return query.getMany();
-  }
-
   getManyQuery(query: DeepPartial<SelectTree<entity>>) {
     const qb = this.repo.createQueryBuilder(this.rootAlias);
     qb.select([]);

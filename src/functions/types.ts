@@ -99,3 +99,7 @@ export type Where<entity> = {
     ? entity[key] | entity[key][] | "*"
     : Where<entity[key]>;
 };
+
+export type KeyValue<T1, T2> = {
+  [key in keyof T1]?: T2;
+};
